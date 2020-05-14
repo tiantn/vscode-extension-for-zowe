@@ -116,6 +116,12 @@ export interface IZoweTree<T> extends vscode.TreeDataProvider<T> {
      */
     setItem(treeView: vscode.TreeView<IZoweNodeType>, node: IZoweNodeType);
     /**
+     * Selects a specific item in the tree view (Theia route)
+     *
+     * @param {IZoweTreeNode}
+     */
+    setItemInTheia(fileProvider: IZoweTree<IZoweNodeType>, item: IZoweNodeType);
+    /**
      * Saves the currently employed filter as a favorite.
      * @param node: A root node representing a session
      */

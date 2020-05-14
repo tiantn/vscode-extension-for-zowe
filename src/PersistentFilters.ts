@@ -103,10 +103,9 @@ export class PersistentFilters {
      */
     public async addRecall(criteria: string) {
         if (criteria) {
-            criteria = criteria.toUpperCase();
             // Remove any entries that match
             this.mRecall = this.mRecall.filter((element) => {
-                return element.trim() !== criteria.trim();
+                return element.toUpperCase().trim() !== criteria.toUpperCase().trim();
             });
 
             // Add value to front of stack

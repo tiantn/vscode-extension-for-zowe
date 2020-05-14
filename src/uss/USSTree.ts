@@ -493,6 +493,11 @@ export class USSTree extends ZoweTreeProvider implements IZoweTree<IZoweUSSTreeN
         // Reveal the searched item in the tree
         const selectedNode: IZoweUSSTreeNode = sessionNode.children.find((elt) => elt.label === selectedNodeName);
         if (selectedNode) {
+            if (globals.ISTHEIA) {
+                await this.setItemInTheia(this, selectedNode);
+            } else {
+                await this.getTreeView().reveal(selectedNode, { select: true, focus: true });
+            }
             selectedNode.openUSS(false, true, this);
         } else {
             vscode.window.showInformationMessage(localize("findUSSItem.unsuccessful", "File does not exist. It may have been deleted."));

@@ -177,8 +177,14 @@ export async function openPS(node: IZoweDatasetTreeNode, previewMember: boolean,
             if (previewMember === true) {
                 await vscode.window.showTextDocument(document);
             } else {
-                await vscode.window.showTextDocument(document, {preview: false});
+                await vscode.window.showTextDocument(document, { preview: false });
             }
+            if (globals.ISTHEIA) {
+                await datasetProvider.setItemInTheia(datasetProvider, node);
+            } else {
+                await datasetProvider.getTreeView().reveal(node, { select: true, focus: true });
+            }
+
             if (datasetProvider) { datasetProvider.addRecall(`[${node.getProfileName()}]: ${label}`); }
         } catch (err) {
             globals.LOG.error(localize("openPS.log.error.openDataSet", "Error encountered when opening data set! ") + JSON.stringify(err));
@@ -279,7 +285,12 @@ export async function createFile(node: IZoweDatasetTreeNode, datasetProvider: IZ
                     node.dirty = true;
 
                     const newNode = await node.getChildren().then((children) => children.find((child) => child.label === name));
-                    datasetProvider.getTreeView().reveal(newNode, { select: true });
+                    if (globals.ISTHEIA) {
+                        // In Theia we must be more explicit about expanding the parent node
+                        await newNode.getSessionNode().getChildren();
+                        datasetProvider.getTreeView().reveal(newNode.getSessionNode(), { select: true, focus: true, expand: true });
+                    }
+                    datasetProvider.setItem(datasetProvider.getTreeView(), newNode);
                 }
             } catch (err) {
                 globals.LOG.error(localize("createDataSet.error", "Error encountered when creating data set! ") + JSON.stringify(err));

@@ -44,7 +44,7 @@ export const JOBS_SPOOL_CONTEXT = "spool";
 export const VSAM_CONTEXT = "vsam";
 export const ICON_STATE_OPEN = "open";
 export const ICON_STATE_CLOSED = "closed";
-export const THEIA = "Eclipse Theia";
+export const THEIA = "Theia";
 
 /**
  * Defines all global variables
@@ -53,7 +53,7 @@ export const THEIA = "Eclipse Theia";
 export function defineGlobals(tempPath: string | undefined) {
     // Set app name
     const appName: string = vscode.env.appName;
-    if (appName && appName === this.THEIA) { this.ISTHEIA = true; }
+    if (appName && appName.includes(this.THEIA)) { this.ISTHEIA = true; }
 
     // Set temp path & folder paths
     tempPath !== "" && tempPath !== undefined ?

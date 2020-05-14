@@ -13,10 +13,12 @@ import * as vscode from "vscode";
 import { Logger, IProfile, ISession  } from "@zowe/imperative";
 import { PersistentFilters } from "../PersistentFilters";
 import { OwnerFilterDescriptor } from "../job/utils";
-import { IZoweTreeNode, IZoweDatasetTreeNode } from "../api/IZoweTreeNode";
+import { IZoweTreeNode, IZoweDatasetTreeNode, IZoweNodeType } from "../api/IZoweTreeNode";
 import { getIconByNode } from "../generators/icons";
 import { Profiles } from "../Profiles";
 import { setProfile, setSession } from "../utils";
+import { ZoweUSSNode } from "../uss/ZoweUSSNode";
+import { IZoweTree } from "../api/IZoweTree";
 
 // tslint:disable-next-line: max-classes-per-file
 export class ZoweTreeProvider {
@@ -53,8 +55,35 @@ export class ZoweTreeProvider {
      *
      * @param {IZoweTreeNode}
      */
-    public setItem(treeView: vscode.TreeView<IZoweTreeNode>, item: IZoweTreeNode) {
+    public async setItem(treeView: vscode.TreeView<IZoweTreeNode>, item: IZoweTreeNode) {
         treeView.reveal(item, {select: true, focus: true});
+    }
+
+    /**
+     * Selects a specific item in the tree view (Theia route)
+     *
+     * @param {IZoweTreeNode}
+     */
+    public async setItemInTheia(fileProvider: IZoweTree<IZoweNodeType>, item: IZoweNodeType) {
+        // In Theia we have to expand every parent node explicitly
+        let currNode = item;
+        const parentArray = [item];
+        while (currNode.getParent()) {
+            parentArray.unshift(currNode.getParent());
+            currNode = currNode.getParent();
+        }
+        for (const parent of parentArray) {
+            if (parent.label === item.label) {
+                item.children.push(new ZoweUSSNode(
+                    "dummy", vscode.TreeItemCollapsibleState.None, item, null, undefined, undefined, item.getProfile().name));
+                await item.getChildren();
+                await fileProvider.getTreeView().reveal(item, { select: true, focus: true });
+                item.children.pop();
+            } else {
+                await parent.getChildren();
+                await fileProvider.getTreeView().reveal(parent, { select: true, focus: true, expand: true });
+            }
+        }
     }
 
     /**

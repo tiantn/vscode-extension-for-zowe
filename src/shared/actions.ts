@@ -19,6 +19,7 @@ import { filterTreeByString } from "../shared/utils";
 import { FilterItem, resolveQuickPickHelper, FilterDescriptor } from "../utils";
 import * as contextually from "../shared/context";
 import * as nls from "vscode-nls";
+import { ZoweUSSNode } from "../uss/ZoweUSSNode";
 const localize = nls.config({messageFormat: nls.MessageFormat.file})();
 
 /**
@@ -70,8 +71,21 @@ export async function searchInAllLoadedItems(datasetProvider?: IZoweTree<IZoweDa
     }
     quickpick.items = [...qpItems];
 
-    quickpick.show();
-    const choice = await resolveQuickPickHelper(quickpick);
+    let choice;
+    if (globals.ISTHEIA) { // Theia doesn't work properly when directly creating a QuickPick
+        const options1: vscode.QuickPickOptions = {
+            placeHolder: localize("searchHistory.options.prompt", "Enter a filter")
+        };
+        // get user selection
+        choice = (await vscode.window.showQuickPick([...qpItems], options1));
+        if (!choice) {
+            vscode.window.showInformationMessage(localize("enterPattern.pattern", "No selection made."));
+            return;
+        }
+    } else {
+        quickpick.show();
+        choice = await resolveQuickPickHelper(quickpick);
+    }
     if (!choice) {
         vscode.window.showInformationMessage(localize("searchInAllLoadedItems.enterPattern", "You must enter a pattern."));
         return;
@@ -101,6 +115,13 @@ export async function searchInAllLoadedItems(datasetProvider?: IZoweTree<IZoweDa
                 // If selected item is file, open it in workspace
                 ussFileProvider.addHistory(node.fullPath);
                 const ussNode: IZoweUSSTreeNode = node;
+
+                // Reveal node in tree
+                if (globals.ISTHEIA) {
+                    await ussFileProvider.setItemInTheia(ussFileProvider, node);
+                } else {
+                    await ussFileProvider.getTreeView().reveal(node, { select: true, focus: true });
+                }
                 ussNode.openUSS(false, true, ussFileProvider);
             }
         } else {
@@ -114,15 +135,17 @@ export async function searchInAllLoadedItems(datasetProvider?: IZoweTree<IZoweDa
                 // Members
                 children = await datasetProvider.getChildren(node);
                 const member = children.filter((child) => child.label.trim() === memberName)[0];
-                node.collapsibleState = vscode.TreeItemCollapsibleState.Expanded;
-                await datasetProvider.getTreeView().reveal(member, {select: true, focus: true, expand: false});
 
                 // Open in workspace
                 datasetProvider.addHistory(`${nodeName}(${memberName})`);
                 openPS(member, true, datasetProvider);
             } else {
                 // PDS & SDS
-                await datasetProvider.getTreeView().reveal(node, {select: true, focus: true, expand: false});
+                if (globals.ISTHEIA) {
+                    await datasetProvider.setItemInTheia(datasetProvider, node);
+                } else {
+                    await datasetProvider.getTreeView().reveal(node, {select: true, focus: true});
+                }
 
                 // If selected node was SDS, open it in workspace
                 if (contextually.isDs(node)) {
@@ -178,7 +201,7 @@ export async function openRecentMemberPrompt(datasetTree: IZoweTree<IZoweDataset
         if (pattern.indexOf("/") > -1) {
             // USS file was selected
             const filePath = pattern.substring(pattern.indexOf("/"));
-            const sessionNode: IZoweUSSTreeNode = ussTree.mSessionNodes.find((sessNode) => sessNode.getProfileName() === sessionName);
+            const sessionNode: IZoweDatasetTreeNode = ussTree.mSessionNodes.find((sessNode) => sessNode.getProfileName() === sessionName);
             await ussTree.openItemFromPath(filePath, sessionNode);
         } else {
             // Data set was selected

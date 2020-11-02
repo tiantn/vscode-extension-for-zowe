@@ -14,5 +14,34 @@
    "typescript.tsc.autoDetect": "off",
    // Make sure people do not accidentally forget to sign
    "git.alwaysSignOff": true,
-   "typescript.tsdk": "node_modules/typescript/lib"
+"typescript.tsdk": "node_modules/typescript/lib",
+"endevor.connections": [
+    {
+        "name": "nienaber",
+        "hosts": [
+            {
+                "datasource": "ENDEVOR",
+                "filters": [
+                    {
+                        "uri": "env/1/ca32/test/bool/elt"
+                    }
+                ],
+                "id": 0,
+                "name": "ENDEVOR",
+                "profileLabel": "nienaber",
+                "url": "http://usilca31.lvn.broadcom.net:47400",
+                "username": "kn891873"
+            },
+            {
+                "datasource": "WEBSMFNO",
+                "filters": [],
+                "id": 1,
+                "name": "WEBSMFNO",
+                "profileLabel": "nienaber",
+                "url": "http://usilca31.lvn.broadcom.net:47400",
+                "username": "kn891873"
+            }
+        ]
+    }
+]
 }

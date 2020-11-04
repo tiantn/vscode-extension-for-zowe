@@ -263,7 +263,7 @@ export async function openPS(node: IZoweDatasetTreeNode, previewMember: boolean,
 }
 
 export function getDataSetTypeAndOptions(type: string) {
-    let typeEnum;
+    let typeEnum: zowe.CreateDataSetTypeEnum;
     let createOptions;
     switch (type) {
         case localize("createFile.dataSetBinary", "Data Set Binary"):
@@ -304,7 +304,8 @@ export function getDataSetTypeAndOptions(type: string) {
  */
 export async function createFile(node: IZoweDatasetTreeNode, datasetProvider: IZoweTree<IZoweDatasetTreeNode>) {
     let dsName: string;
-    let typeEnum;
+    let typeEnum: zowe.CreateDataSetTypeEnum;
+    let propertyArray;
     const stepTwoOptions: vscode.QuickPickOptions = {
         placeHolder: localize("createFile.quickPickOption.dataSetType", "Type of Data Set to be Created"),
         ignoreFocusOut: true,
@@ -325,8 +326,6 @@ export async function createFile(node: IZoweDatasetTreeNode, datasetProvider: IZ
         localize("createFile.allocate", "+ Allocate Data Set"),
         localize("createFile.editAttributes", "Edit Attributes")
     ];
-    // The array of the data set's properties
-    let propertyArray;
 
     datasetProvider.checkCurrentProfile(node);
     if ((Profiles.getInstance().validProfile === ValidProfileEnum.VALID) ||
@@ -346,26 +345,46 @@ export async function createFile(node: IZoweDatasetTreeNode, datasetProvider: IZ
             typeEnum = this.getDataSetTypeAndOptions(type).typeEnum;
             const typeOptions = this.getDataSetTypeAndOptions(type).createOptions;
             globals.LOG.debug(localize("createFile.log.debug.allocatingNewDataSet", "Allocating new data set"));
+
+            // Array of all properties which can be passed to createDataSet.
+            // If the selected dataset type has a default value defined in settings.json,
+            // then this value will be applied, until changed by the user
             propertyArray = [
                 { key: `allocateDataSet`, label: `+ Allocate Data Set`, value: ``, placeHolder: ``, alwaysShow: true },
-                { key: `volser`, label: `Volume Serial`, value: null, placeHolder: `Enter the volume serial on which the data set should be placed`,
-                  alwaysShow: false },
-                { key: `unit`, label: `Device Type`, value: null, placeHolder: `Enter a device type (unit)`, alwaysShow: false },
-                { key: `dsorg`, label: `Node Type`, value: `PO`, placeHolder: `Select a node type`, alwaysShow: false },
-                { key: `alcunit`, label: `Allocation Unit`, value: `BLK`, placeHolder: `Enter an allocation unit`, alwaysShow: false },
-                { key: `primary`, label: `Primary Space`, value: `10`, placeHolder: `Enter the primary space allocation`, alwaysShow: false },
-                { key: `secondary`, label: `Secondary Space`, value: `1`, placeHolder: `Enter the secondary space allocation`, alwaysShow: false },
-                { key: `dirblk`, label: `Directory Blocks`, value: `25`, placeHolder: `Enter the number of directory blocks`, alwaysShow: false },
-                { key: `avgblk`, label: `Directory Blocks`, value: `25`, placeHolder: `Enter the average block length (if allocation unit = BLK)`, alwaysShow: false },
-                { key: `recfm`, label: `Record Format`, value: `U`, placeHolder: `Enter the data set's record format`, alwaysShow: false },
-                { key: `blksize`, label: `Block Size`, value: `27998`, placeHolder: `Enter a block size`, alwaysShow: false },
-                { key: `lrecl`, label: `Record Length`, value: `27998`, placeHolder: `Enter the logical record length`, alwaysShow: false },
-                { key: `storclass`, label: `Storage Class`, value: null, placeHolder: `Enter the SMS storage class`, alwaysShow: false },
-                { key: `mgntclass`, label: `Management Class`, value: null, placeHolder: `Enter the SMS management class`, alwaysShow: false },
-                { key: `dataclass`, label: `Data Class`, value: null, placeHolder: `Enter an SMS data class`, alwaysShow: false },
-                { key: `dsntype`, label: `DSN Type`, value: `PDS`, placeHolder: `Specify the DSN type`, alwaysShow: false },
-                { key: `showAttributes`, label: `Show Attributes`, value: `false`, placeHolder: `Show the full allocation attributes?`, alwaysShow: false },
-                { key: `size`, label: `Size`, value: null, placeHolder: `Enter the size of the data set`, alwaysShow: false },
+                { key: `volser`, label: `Volume Serial`, value: typeOptions ? typeOptions.volser : null,
+                  placeHolder: `Enter the volume serial on which the data set should be placed`, alwaysShow: false },
+                { key: `unit`, label: `Device Type`, value: typeOptions ? typeOptions.unit : null,
+                  placeHolder: `Enter a device type (unit)`, alwaysShow: false },
+                { key: `dsorg`, label: `Node Type`, value: typeOptions ? typeOptions.dsorg : null,
+                  placeHolder: `Select a node type`, alwaysShow: false },
+                { key: `alcunit`, label: `Allocation Unit`, value: typeOptions ? typeOptions.alcunit : null,
+                  placeHolder: `Enter an allocation unit`, alwaysShow: false },
+                { key: `primary`, label: `Primary Space`, value: typeOptions ? typeOptions.primary : null,
+                  placeHolder: `Enter the primary space allocation`, alwaysShow: false },
+                { key: `secondary`, label: `Secondary Space`, value: typeOptions ? typeOptions.secondary : null,
+                  placeHolder: `Enter the secondary space allocation`, alwaysShow: false },
+                { key: `dirblk`, label: `Directory Blocks`, value: typeOptions ? typeOptions.dirblk : null,
+                  placeHolder: `Enter the number of directory blocks`, alwaysShow: false },
+                { key: `avgblk`, label: `Directory Blocks`, value: typeOptions ? typeOptions.avgblk : null,
+                  placeHolder: `Enter the average block length (if allocation unit = BLK)`, alwaysShow: false },
+                { key: `recfm`, label: `Record Format`, value: typeOptions ? typeOptions.recfm : null,
+                  placeHolder: `Enter the data set's record format`, alwaysShow: false },
+                { key: `blksize`, label: `Block Size`, value: typeOptions ? typeOptions.blksize : null,
+                  placeHolder: `Enter a block size`, alwaysShow: false },
+                { key: `lrecl`, label: `Record Length`, value: typeOptions ? typeOptions.lrecl : null,
+                  placeHolder: `Enter the logical record length`, alwaysShow: false },
+                { key: `storclass`, label: `Storage Class`, value: typeOptions ? typeOptions.storclass : null,
+                  placeHolder: `Enter the SMS storage class`, alwaysShow: false },
+                { key: `mgntclass`, label: `Management Class`, value: typeOptions ? typeOptions.mgntclass : null,
+                  placeHolder: `Enter the SMS management class`, alwaysShow: false },
+                { key: `dataclass`, label: `Data Class`, value: typeOptions ? typeOptions.dataclass : null,
+                  placeHolder: `Enter an SMS data class`, alwaysShow: false },
+                { key: `dsntype`, label: `DSN Type`, value: typeOptions ? typeOptions.dsntype : null,
+                  placeHolder: `Specify the DSN type`, alwaysShow: false },
+                { key: `showAttributes`, label: `Show Attributes`, value: typeOptions ? typeOptions.showAttributes : null,
+                  placeHolder: `Show the full allocation attributes?`, alwaysShow: false },
+                { key: `size`, label: `Size`, value: typeOptions ? typeOptions.size : null,
+                  placeHolder: `Enter the size of the data set`, alwaysShow: false },
                 { key: `nodeLabel`, label: `Node Label`, value: dsName, placeHolder: `Enter a node label`, alwaysShow: false }
             ];
         }
@@ -377,6 +396,7 @@ export async function createFile(node: IZoweDatasetTreeNode, datasetProvider: IZ
             return;
         } else {
             if (choice === "+ Allocate Data Set") {
+                // User wants to allocate straightaway - skip Step 4
                 globals.LOG.debug(localize("createFile.log.debug.allocatingNewDataSet", "Allocating new data set"));
             } else {
                 // 4th step (optional): Show data set attributes
@@ -390,6 +410,8 @@ export async function createFile(node: IZoweDatasetTreeNode, datasetProvider: IZ
             }
         }
 
+        // Final data set attributes, to be passed to createDataset
+        // (we delete the empty ones so that the API doesn't complain)
         const options: ICreateDataSetOptions = {
             volser: propertyArray[1].value,
             unit: propertyArray[2].value,
@@ -409,8 +431,12 @@ export async function createFile(node: IZoweDatasetTreeNode, datasetProvider: IZ
             showAttributes: propertyArray[16].value == 'True',
             size: propertyArray[17].value,
         }
+        for(let key of Object.keys(options)) {
+            if (!options[key]) { delete options[key] }
+        }
 
         try {
+            // Allocate the data set
             await ZoweExplorerApiRegister.getMvsApi(node.getProfile()).createDataSet(typeEnum, propertyArray[18].value, options);
             node.dirty = true;
 

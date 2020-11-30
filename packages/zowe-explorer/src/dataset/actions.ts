@@ -338,9 +338,9 @@ export function getDataSetTypeAndOptions(type: string) {
  */
 export async function createFile(node: IZoweDatasetTreeNode, datasetProvider: IZoweTree<IZoweDatasetTreeNode>) {
     let dsName: string;
-    let typeEnum: number;
     let propertiesFromDsType: any;
-    const stepTwoOptions = {
+    let typeEnum: zowe.CreateDataSetTypeEnum;
+    const stepTwoOptions: vscode.QuickPickOptions = {
         placeHolder: localize("createFile.quickPickOption.dataSetType", "Type of Data Set to be Created"),
         ignoreFocusOut: true,
         canPickMany: false,
@@ -357,7 +357,7 @@ export async function createFile(node: IZoweDatasetTreeNode, datasetProvider: IZ
         localize("createFile.dataSetSequential", "Data Set Sequential"),
     ];
     const stepThreeChoices = [
-        localize("createFile.allocate", " + Allocate Data Set"),
+        localize("createFile.allocate", "+ Allocate Data Set"),
         localize("createFile.editAttributes", "Edit Attributes"),
     ];
     // Make a nice new mutable array for the DS properties
@@ -384,7 +384,10 @@ export async function createFile(node: IZoweDatasetTreeNode, datasetProvider: IZ
             });
         } else {
             globals.LOG.debug(
-                localize("createFile.noValidNameEntered", "No valid data set name entered. Operation cancelled")
+                localize(
+                    "createFile.log.debug.noValidNameEntered",
+                    "No valid data set name entered. Operation cancelled"
+                )
             );
             vscode.window.showInformationMessage(localize("createFile.operationCancelled", "Operation cancelled."));
             return;
@@ -394,7 +397,10 @@ export async function createFile(node: IZoweDatasetTreeNode, datasetProvider: IZ
         const type = await vscode.window.showQuickPick(stepTwoChoices, stepTwoOptions);
         if (type == null) {
             globals.LOG.debug(
-                localize("createFile.noValidTypeSelected", "No valid data set type selected. Operation cancelled.")
+                localize(
+                    "createFile.log.debug.noValidTypeSelected",
+                    "No valid data set type selected. Operation cancelled."
+                )
             );
             vscode.window.showInformationMessage(localize("createFile.operationCancelled", "Operation cancelled."));
             return;
@@ -424,7 +430,7 @@ export async function createFile(node: IZoweDatasetTreeNode, datasetProvider: IZ
         } else {
             if (choice === " + Allocate Data Set") {
                 // User wants to allocate straightaway - skip Step 4
-                globals.LOG.debug(localize("createFile.allocatingNewDataSet", "Allocating new data set"));
+                globals.LOG.debug(localize("createFile.log.debug.allocatingNewDataSet", "Allocating new data set"));
                 vscode.window.showInformationMessage(
                     localize("createFile.allocatingNewDataSet", "Allocating new data set")
                 );
@@ -509,7 +515,7 @@ export async function createFile(node: IZoweDatasetTreeNode, datasetProvider: IZ
 async function handleUserSelection(newDSProperties, dsType): Promise<string> {
     // Create the array of items in the quickpick list
     const qpItems = [];
-    qpItems.push(new FilterItem(` + Allocate Data Set`, null, true));
+    qpItems.push(new FilterItem(`+ Allocate Data Set`, null, true));
     newDSProperties.forEach((prop) => {
         qpItems.push(new FilterItem(prop.label, prop.value, true));
     });
@@ -522,7 +528,9 @@ async function handleUserSelection(newDSProperties, dsType): Promise<string> {
     quickpick.matchOnDescription = false;
     quickpick.onDidHide(() => {
         if (quickpick.selectedItems.length === 0) {
-            globals.LOG.debug(localize("createFile.noOptionSelected", "No option selected. Operation cancelled."));
+            globals.LOG.debug(
+                localize("createFile.log.debug.noOptionSelected", "No option selected. Operation cancelled.")
+            );
             vscode.window.showInformationMessage(localize("createFile.operationCancelled", "Operation cancelled."));
             return;
         }
@@ -532,14 +540,27 @@ async function handleUserSelection(newDSProperties, dsType): Promise<string> {
     quickpick.show();
     let pattern: string;
     const choice2 = await resolveQuickPickHelper(quickpick);
-    pattern = choice2.label;
+    if (!choice2) {
+        vscode.window.showInformationMessage(
+            localize("createFileNoWebview.enterPattern", "You must select an option to edit.")
+        );
+        return;
+    } else {
+        pattern = choice2.label;
+    }
     quickpick.dispose();
 
     if (pattern) {
         // Parse pattern for selected attribute
         switch (pattern) {
-            case " + Allocate Data Set":
-                return new Promise((resolve) => resolve(` + Allocate Data Set`));
+            case "+ Allocate Data Set":
+                return new Promise((resolve) => resolve(`+ Allocate Data Set`));
+            case "Show Attributes":
+                newDSProperties.find((prop) => prop.label === pattern).value = await vscode.window.showQuickPick([
+                    `True`,
+                    `False`,
+                ]);
+                break;
             default:
                 newDSProperties.find((prop) => prop.label === pattern).value = await vscode.window.showInputBox({
                     value: newDSProperties.find((prop) => prop.label === pattern).value,

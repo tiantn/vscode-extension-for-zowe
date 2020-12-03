@@ -2236,7 +2236,8 @@ describe("Dataset Actions Unit Tests - Function createFile", () => {
         blockMocks.testDatasetTree.createFilterString.mockResolvedValue("test");
         blockMocks.testDatasetTree.getSearchHistory.mockReturnValue([]);
         mocked(Profiles.getInstance).mockReturnValue(blockMocks.profileInstance);
-        mocked(vscode.window.showInputBox).mockResolvedValue("test");
+        mocked(vscode.window.showInputBox).mockResolvedValueOnce("test");
+        mocked(vscode.window.showQuickPick).mockResolvedValue("+ Allocate Data Set" as any);
         const createDataSetSpy = jest.spyOn(blockMocks.mvsApi, "createDataSet");
         createDataSetSpy.mockReset();
         const getChildrenSpy = jest.spyOn(blockMocks.datasetSessionNode, "getChildren");
@@ -2278,6 +2279,7 @@ describe("Dataset Actions Unit Tests - Function createFile", () => {
         blockMocks.testDatasetTree.getSearchHistory.mockReturnValue([]);
         mocked(Profiles.getInstance).mockReturnValue(blockMocks.profileInstance);
         mocked(vscode.window.showInputBox).mockResolvedValue("test");
+        mocked(vscode.window.showQuickPick).mockResolvedValue("+ Allocate Data Set" as any);
         const createDataSetSpy = jest.spyOn(blockMocks.mvsApi, "createDataSet");
         createDataSetSpy.mockReset();
         const node = new ZoweDatasetNode(
@@ -2326,6 +2328,7 @@ describe("Dataset Actions Unit Tests - Function createFile", () => {
         blockMocks.testDatasetTree.getSearchHistory.mockReturnValue([]);
         mocked(Profiles.getInstance).mockReturnValue(blockMocks.profileInstance);
         mocked(vscode.window.showInputBox).mockResolvedValue("test");
+        mocked(vscode.window.showQuickPick).mockResolvedValue("+ Allocate Data Set" as any);
         const createDataSetSpy = jest.spyOn(blockMocks.mvsApi, "createDataSet");
         createDataSetSpy.mockReset();
         const node = new ZoweDatasetNode(

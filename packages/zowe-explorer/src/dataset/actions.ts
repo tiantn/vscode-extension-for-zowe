@@ -340,7 +340,7 @@ export async function createFile(node: IZoweDatasetTreeNode, datasetProvider: IZ
     let dsName: string;
     let propertiesFromDsType: any;
     let typeEnum: zowe.CreateDataSetTypeEnum;
-    const stepTwoOptions: vscode.QuickPickOptions = {
+    const stepTwoOptions = {
         placeHolder: localize("createFile.quickPickOption.dataSetType", "Type of Data Set to be Created"),
         ignoreFocusOut: true,
         canPickMany: false,

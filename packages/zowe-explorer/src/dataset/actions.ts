@@ -357,7 +357,7 @@ export async function createFile(node: IZoweDatasetTreeNode, datasetProvider: IZ
         localize("createFile.dataSetSequential", "Data Set Sequential"),
     ];
     const stepThreeChoices = [
-        localize("createFile.allocate", "+ Allocate Data Set"),
+        localize("createFile.allocate", " + Allocate Data Set"),
         localize("createFile.editAttributes", "Edit Attributes"),
     ];
     // Make a nice new mutable array for the DS properties
@@ -377,17 +377,25 @@ export async function createFile(node: IZoweDatasetTreeNode, datasetProvider: IZ
         if (dsName) {
             dsName = dsName.trim().toUpperCase();
             newDSProperties.forEach((property) => {
+<<<<<<< HEAD
                 if (property.key === `dsName`) {
+=======
+                if (property.key === `nodeLabel`) {
+>>>>>>> 7a01b589 (Fixed Zach's comment...alphabetized attributes...put +Allocate at top of list...improved logging & messages)
                     property.value = dsName;
                     property.placeHolder = dsName;
                 }
             });
         } else {
             globals.LOG.debug(
+<<<<<<< HEAD
                 localize(
                     "createFile.log.debug.noValidNameEntered",
                     "No valid data set name entered. Operation cancelled"
                 )
+=======
+                localize("createFile.noValidNameEntered", "No valid data set name entered. Operation cancelled")
+>>>>>>> 7a01b589 (Fixed Zach's comment...alphabetized attributes...put +Allocate at top of list...improved logging & messages)
             );
             vscode.window.showInformationMessage(localize("createFile.operationCancelled", "Operation cancelled."));
             return;
@@ -397,10 +405,14 @@ export async function createFile(node: IZoweDatasetTreeNode, datasetProvider: IZ
         const type = await vscode.window.showQuickPick(stepTwoChoices, stepTwoOptions);
         if (type == null) {
             globals.LOG.debug(
+<<<<<<< HEAD
                 localize(
                     "createFile.log.debug.noValidTypeSelected",
                     "No valid data set type selected. Operation cancelled."
                 )
+=======
+                localize("createFile.noValidTypeSelected", "No valid data set type selected. Operation cancelled.")
+>>>>>>> 7a01b589 (Fixed Zach's comment...alphabetized attributes...put +Allocate at top of list...improved logging & messages)
             );
             vscode.window.showInformationMessage(localize("createFile.operationCancelled", "Operation cancelled."));
             return;
@@ -408,6 +420,7 @@ export async function createFile(node: IZoweDatasetTreeNode, datasetProvider: IZ
             // Add the default property values to the list of items
             // that will be shown in DS attributes for editing
             typeEnum = getDataSetTypeAndOptions(type).typeEnum;
+<<<<<<< HEAD
             const cliDefaultsKey = globals.CreateDataSetTypeWithKeysEnum[typeEnum].replace("DATA_SET_", "");
 
             propertiesFromDsType = zowe.CreateDefaults.DATA_SET[cliDefaultsKey];
@@ -419,6 +432,8 @@ export async function createFile(node: IZoweDatasetTreeNode, datasetProvider: IZ
                     }
                 });
             });
+=======
+>>>>>>> 7a01b589 (Fixed Zach's comment...alphabetized attributes...put +Allocate at top of list...improved logging & messages)
         }
 
         // 3rd step: Ask if we allocate, or show DS attributes
@@ -430,7 +445,11 @@ export async function createFile(node: IZoweDatasetTreeNode, datasetProvider: IZ
         } else {
             if (choice === " + Allocate Data Set") {
                 // User wants to allocate straightaway - skip Step 4
+<<<<<<< HEAD
                 globals.LOG.debug(localize("createFile.log.debug.allocatingNewDataSet", "Allocating new data set"));
+=======
+                globals.LOG.debug(localize("createFile.allocatingNewDataSet", "Allocating new data set"));
+>>>>>>> 7a01b589 (Fixed Zach's comment...alphabetized attributes...put +Allocate at top of list...improved logging & messages)
                 vscode.window.showInformationMessage(
                     localize("createFile.allocatingNewDataSet", "Allocating new data set")
                 );
@@ -446,8 +465,14 @@ export async function createFile(node: IZoweDatasetTreeNode, datasetProvider: IZ
                     );
                     return;
                 } else {
+<<<<<<< HEAD
                     globals.LOG.debug(
                         localize("createFile.allocatingNewDataSet", "Attempting to allocate new data set")
+=======
+                    globals.LOG.debug(localize("createFile.allocatingNewDataSet", "Allocating new data set"));
+                    vscode.window.showInformationMessage(
+                        localize("createFile.allocatingNewDataSet", "Allocating new data set")
+>>>>>>> 7a01b589 (Fixed Zach's comment...alphabetized attributes...put +Allocate at top of list...improved logging & messages)
                     );
                 }
             }
@@ -457,6 +482,7 @@ export async function createFile(node: IZoweDatasetTreeNode, datasetProvider: IZ
         const dsPropsForAPI = {};
         newDSProperties.forEach((property) => {
             if (property.value) {
+<<<<<<< HEAD
                 if (property.key === `dsName`) {
                     dsName = property.value;
                 } else {
@@ -465,6 +491,12 @@ export async function createFile(node: IZoweDatasetTreeNode, datasetProvider: IZ
                     } else {
                         dsPropsForAPI[property.key] = property.value;
                     }
+=======
+                if (property.key === `nodeLabel`) {
+                    dsName = property.value;
+                } else {
+                    dsPropsForAPI[property.key] = property.value;
+>>>>>>> 7a01b589 (Fixed Zach's comment...alphabetized attributes...put +Allocate at top of list...improved logging & messages)
                 }
             }
         });
@@ -528,9 +560,13 @@ async function handleUserSelection(newDSProperties, dsType): Promise<string> {
     quickpick.matchOnDescription = false;
     quickpick.onDidHide(() => {
         if (quickpick.selectedItems.length === 0) {
+<<<<<<< HEAD
             globals.LOG.debug(
                 localize("createFile.log.debug.noOptionSelected", "No option selected. Operation cancelled.")
             );
+=======
+            globals.LOG.debug(localize("createFile.noOptionSelected", "No option selected. Operation cancelled."));
+>>>>>>> 7a01b589 (Fixed Zach's comment...alphabetized attributes...put +Allocate at top of list...improved logging & messages)
             vscode.window.showInformationMessage(localize("createFile.operationCancelled", "Operation cancelled."));
             return;
         }
@@ -540,14 +576,7 @@ async function handleUserSelection(newDSProperties, dsType): Promise<string> {
     quickpick.show();
     let pattern: string;
     const choice2 = await resolveQuickPickHelper(quickpick);
-    if (!choice2) {
-        vscode.window.showInformationMessage(
-            localize("createFileNoWebview.enterPattern", "You must select an option to edit.")
-        );
-        return;
-    } else {
-        pattern = choice2.label;
-    }
+    pattern = choice2.label;
     quickpick.dispose();
 
     if (pattern) {

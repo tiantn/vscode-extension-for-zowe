@@ -75,34 +75,54 @@ export const DATA_SET_PROPERTIES = [
         key: `alcunit`,
         label: `Allocation Unit`,
         value: null,
+<<<<<<< HEAD
         placeHolder: localize("createFile.attribute.alcunit", `Enter an allocation unit`),
+=======
+        placeHolder: `Enter an allocation unit`,
+>>>>>>> 7a01b589 (Fixed Zach's comment...alphabetized attributes...put +Allocate at top of list...improved logging & messages)
     },
     {
         key: `avgblk`,
         label: `Average Block Length`,
         value: null,
+<<<<<<< HEAD
         placeHolder: localize(
             "createFile.attribute.avgblk",
             `Enter the average block length (if allocation unit = BLK)`
         ),
+=======
+        placeHolder: `Enter the average block length (if allocation unit = BLK)`,
+>>>>>>> 7a01b589 (Fixed Zach's comment...alphabetized attributes...put +Allocate at top of list...improved logging & messages)
     },
     {
         key: `blksize`,
         label: `Block Size`,
         value: null,
+<<<<<<< HEAD
         placeHolder: localize("createFile.attribute.blksize", `Enter a block size`),
+=======
+        placeHolder: `Enter a block size`,
+>>>>>>> 7a01b589 (Fixed Zach's comment...alphabetized attributes...put +Allocate at top of list...improved logging & messages)
     },
     {
         key: `dataclass`,
         label: `Data Class`,
         value: null,
+<<<<<<< HEAD
         placeHolder: localize("createFile.attribute.dataclass", `Enter an SMS data class`),
+=======
+        placeHolder: `Enter an SMS data class`,
+>>>>>>> 7a01b589 (Fixed Zach's comment...alphabetized attributes...put +Allocate at top of list...improved logging & messages)
     },
     {
         key: `unit`,
         label: `Device Type`,
         value: null,
+<<<<<<< HEAD
         placeHolder: localize("createFile.attribute.unit", `Enter a device type (unit)`),
+=======
+        placeHolder: `Enter a device type (unit)`,
+>>>>>>> 7a01b589 (Fixed Zach's comment...alphabetized attributes...put +Allocate at top of list...improved logging & messages)
     },
     {
         key: `dirblk`,
@@ -112,14 +132,21 @@ export const DATA_SET_PROPERTIES = [
     },
     {
         key: `dsntype`,
+<<<<<<< HEAD
         label: `Data Set Type (DSNTYPE)`,
         value: null,
         placeHolder: localize("createFile.attribute.dsntype", `Specify the data set type (DSNTYPE)`),
+=======
+        label: `DSN Type`,
+        value: null,
+        placeHolder: `Specify the DSN type`,
+>>>>>>> 7a01b589 (Fixed Zach's comment...alphabetized attributes...put +Allocate at top of list...improved logging & messages)
     },
     {
         key: `mgntclass`,
         label: `Management Class`,
         value: null,
+<<<<<<< HEAD
         placeHolder: localize("createFile.attribute.mgntclass", `Enter the SMS management class`),
     },
     {
@@ -133,30 +160,61 @@ export const DATA_SET_PROPERTIES = [
         label: `Data Set Organization (DSORG)`,
         value: null,
         placeHolder: localize("createFile.attribute.dsorg", `Select a data set organization (DSORG)`),
+=======
+        placeHolder: `Enter the SMS management class`,
+    },
+    {
+        key: `nodeLabel`,
+        label: `Node Label`,
+        value: null,
+        placeHolder: `Enter a node label`,
+    },
+    {
+        key: `dsorg`,
+        label: `Node Type`,
+        value: null,
+        placeHolder: `Select a node type`,
+>>>>>>> 7a01b589 (Fixed Zach's comment...alphabetized attributes...put +Allocate at top of list...improved logging & messages)
     },
     {
         key: `primary`,
         label: `Primary Space`,
         value: null,
+<<<<<<< HEAD
         placeHolder: localize("createFile.attribute.primary", `Enter the primary space allocation`),
+=======
+        placeHolder: `Enter the primary space allocation`,
+>>>>>>> 7a01b589 (Fixed Zach's comment...alphabetized attributes...put +Allocate at top of list...improved logging & messages)
     },
     {
         key: `recfm`,
         label: `Record Format`,
         value: null,
+<<<<<<< HEAD
         placeHolder: localize("createFile.attribute.recfm", `Enter the data set's record format`),
+=======
+        placeHolder: `Enter the data set's record format`,
+>>>>>>> 7a01b589 (Fixed Zach's comment...alphabetized attributes...put +Allocate at top of list...improved logging & messages)
     },
     {
         key: `lrecl`,
         label: `Record Length`,
         value: null,
+<<<<<<< HEAD
         placeHolder: localize("createFile.attribute.lrecl", `Enter the logical record length`),
+=======
+        placeHolder: `Enter the logical record length`,
+>>>>>>> 7a01b589 (Fixed Zach's comment...alphabetized attributes...put +Allocate at top of list...improved logging & messages)
     },
     {
         key: `secondary`,
         label: `Secondary Space`,
         value: null,
+<<<<<<< HEAD
         placeHolder: localize("createFile.attribute.secondary", `Enter the secondary space allocation`),
+=======
+        placeHolder: `Enter the secondary space allocation`,
+>>>>>>> 7a01b589 (Fixed Zach's comment...alphabetized attributes...put +Allocate at top of list...improved logging & messages)
     },
     {
         key: `size`,
@@ -171,6 +229,7 @@ export const DATA_SET_PROPERTIES = [
         placeHolder: localize("createFile.attribute.storclass", `Enter the SMS storage class`),
     },
     {
+<<<<<<< HEAD
         key: `volser`,
         label: `Volume Serial`,
         value: null,
@@ -178,6 +237,18 @@ export const DATA_SET_PROPERTIES = [
             "createFile.attribute.volser",
             `Enter the volume serial on which the data set should be placed`
         ),
+=======
+        key: `storclass`,
+        label: `Storage Class`,
+        value: null,
+        placeHolder: `Enter the SMS storage class`,
+    },
+    {
+        key: `volser`,
+        label: `Volume Serial`,
+        value: null,
+        placeHolder: `Enter the volume serial on which the data set should be placed`,
+>>>>>>> 7a01b589 (Fixed Zach's comment...alphabetized attributes...put +Allocate at top of list...improved logging & messages)
     },
 ];
 

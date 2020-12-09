@@ -56,6 +56,22 @@ export class FtpUssApi implements ZoweExplorerApi.IUss {
         return this.session;
     }
 
+    public getSessionFromCommandArgument(cmdArgs: imperative.ICommandArguments): imperative.Session {
+        this.session = new imperative.Session({
+            hostname: cmdArgs.host,
+            port: cmdArgs.port,
+            user: cmdArgs.user,
+            password: cmdArgs.password,
+            rejectUnauthorized: cmdArgs.rejectUnauthorized,
+            basePath: cmdArgs.basePath,
+            strictSSL: false,
+            protocol: cmdArgs.protocol,
+            tokenType: cmdArgs.tokenType,
+            tokenValue: cmdArgs.tokenValue,
+        });
+        return this.session;
+    }
+
     public getProfileTypeName(): string {
         return FtpUssApi.getProfileTypeName();
     }

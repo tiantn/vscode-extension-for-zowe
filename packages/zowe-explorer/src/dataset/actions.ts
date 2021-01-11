@@ -298,31 +298,38 @@ export async function openPS(
 
 export function getDataSetTypeAndOptions(type: string) {
     let typeEnum;
+    let cliDefaultsKey;
     let createOptions;
     switch (type) {
         case localize("createFile.dataSetBinary", "Data Set Binary"):
             typeEnum = zowe.CreateDataSetTypeEnum.DATA_SET_BINARY;
+            cliDefaultsKey = "BINARY";
             createOptions = vscode.workspace.getConfiguration("Zowe-Default-Datasets-Binary");
             break;
         case localize("createFile.dataSetC", "Data Set C"):
             typeEnum = zowe.CreateDataSetTypeEnum.DATA_SET_C;
+            cliDefaultsKey = "C";
             createOptions = vscode.workspace.getConfiguration("Zowe-Default-Datasets-C");
             break;
         case localize("createFile.dataSetClassic", "Data Set Classic"):
             typeEnum = zowe.CreateDataSetTypeEnum.DATA_SET_CLASSIC;
+            cliDefaultsKey = "CLASSIC";
             createOptions = vscode.workspace.getConfiguration("Zowe-Default-Datasets-Classic");
             break;
         case localize("createFile.dataSetPartitioned", "Data Set Partitioned"):
             typeEnum = zowe.CreateDataSetTypeEnum.DATA_SET_PARTITIONED;
+            cliDefaultsKey = "PARTITIONED";
             createOptions = vscode.workspace.getConfiguration("Zowe-Default-Datasets-PDS");
             break;
         case localize("createFile.dataSetSequential", "Data Set Sequential"):
             typeEnum = zowe.CreateDataSetTypeEnum.DATA_SET_SEQUENTIAL;
+            cliDefaultsKey = "SEQUENTIAL";
             createOptions = vscode.workspace.getConfiguration("Zowe-Default-Datasets-PS");
             break;
     }
     return {
         typeEnum,
+        cliDefaultsKey,
         createOptions,
     };
 }
@@ -338,8 +345,13 @@ export function getDataSetTypeAndOptions(type: string) {
  */
 export async function createFile(node: IZoweDatasetTreeNode, datasetProvider: IZoweTree<IZoweDatasetTreeNode>) {
     let dsName: string;
+<<<<<<< HEAD
     let propertiesFromDsType: any;
     let typeEnum: zowe.CreateDataSetTypeEnum;
+=======
+    let typeEnum: number;
+    let propertiesFromDsType: any;
+>>>>>>> 19e8a5e4 (Made sure that attributes from the standard templates are loaded into the attributes list)
     const stepTwoOptions = {
         placeHolder: localize("createFile.quickPickOption.dataSetType", "Type of Data Set to be Created"),
         ignoreFocusOut: true,
@@ -421,7 +433,11 @@ export async function createFile(node: IZoweDatasetTreeNode, datasetProvider: IZ
             // that will be shown in DS attributes for editing
             typeEnum = getDataSetTypeAndOptions(type).typeEnum;
 <<<<<<< HEAD
+<<<<<<< HEAD
             const cliDefaultsKey = globals.CreateDataSetTypeWithKeysEnum[typeEnum].replace("DATA_SET_", "");
+=======
+            const cliDefaultsKey = getDataSetTypeAndOptions(type).cliDefaultsKey;
+>>>>>>> 19e8a5e4 (Made sure that attributes from the standard templates are loaded into the attributes list)
 
             propertiesFromDsType = zowe.CreateDefaults.DATA_SET[cliDefaultsKey];
             newDSProperties.forEach((property) => {
@@ -432,8 +448,11 @@ export async function createFile(node: IZoweDatasetTreeNode, datasetProvider: IZ
                     }
                 });
             });
+<<<<<<< HEAD
 =======
 >>>>>>> 7a01b589 (Fixed Zach's comment...alphabetized attributes...put +Allocate at top of list...improved logging & messages)
+=======
+>>>>>>> 19e8a5e4 (Made sure that attributes from the standard templates are loaded into the attributes list)
         }
 
         // 3rd step: Ask if we allocate, or show DS attributes
@@ -495,8 +514,16 @@ export async function createFile(node: IZoweDatasetTreeNode, datasetProvider: IZ
                 if (property.key === `nodeLabel`) {
                     dsName = property.value;
                 } else {
+<<<<<<< HEAD
                     dsPropsForAPI[property.key] = property.value;
 >>>>>>> 7a01b589 (Fixed Zach's comment...alphabetized attributes...put +Allocate at top of list...improved logging & messages)
+=======
+                    if (typeof propertiesFromDsType[property.key] === "number") {
+                        dsPropsForAPI[property.key] = Number(property.value);
+                    } else {
+                        dsPropsForAPI[property.key] = property.value;
+                    }
+>>>>>>> 19e8a5e4 (Made sure that attributes from the standard templates are loaded into the attributes list)
                 }
             }
         });
@@ -547,7 +574,7 @@ export async function createFile(node: IZoweDatasetTreeNode, datasetProvider: IZ
 async function handleUserSelection(newDSProperties, dsType): Promise<string> {
     // Create the array of items in the quickpick list
     const qpItems = [];
-    qpItems.push(new FilterItem(`+ Allocate Data Set`, null, true));
+    qpItems.push(new FilterItem(` + Allocate Data Set`, null, true));
     newDSProperties.forEach((prop) => {
         qpItems.push(new FilterItem(prop.label, prop.value, true));
     });
@@ -583,7 +610,7 @@ async function handleUserSelection(newDSProperties, dsType): Promise<string> {
         // Parse pattern for selected attribute
         switch (pattern) {
             case " + Allocate Data Set":
-                return new Promise((resolve) => resolve(`+ Allocate Data Set`));
+                return new Promise((resolve) => resolve(` + Allocate Data Set`));
             case "Show Attributes":
                 newDSProperties.find((prop) => prop.label === pattern).value = await vscode.window.showQuickPick([
                     `True`,

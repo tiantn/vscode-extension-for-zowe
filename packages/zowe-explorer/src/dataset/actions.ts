@@ -345,13 +345,8 @@ export function getDataSetTypeAndOptions(type: string) {
  */
 export async function createFile(node: IZoweDatasetTreeNode, datasetProvider: IZoweTree<IZoweDatasetTreeNode>) {
     let dsName: string;
-<<<<<<< HEAD
     let propertiesFromDsType: any;
     let typeEnum: zowe.CreateDataSetTypeEnum;
-=======
-    let typeEnum: number;
-    let propertiesFromDsType: any;
->>>>>>> 19e8a5e4 (Made sure that attributes from the standard templates are loaded into the attributes list)
     const stepTwoOptions = {
         placeHolder: localize("createFile.quickPickOption.dataSetType", "Type of Data Set to be Created"),
         ignoreFocusOut: true,
@@ -389,25 +384,17 @@ export async function createFile(node: IZoweDatasetTreeNode, datasetProvider: IZ
         if (dsName) {
             dsName = dsName.trim().toUpperCase();
             newDSProperties.forEach((property) => {
-<<<<<<< HEAD
                 if (property.key === `dsName`) {
-=======
-                if (property.key === `nodeLabel`) {
->>>>>>> 7a01b589 (Fixed Zach's comment...alphabetized attributes...put +Allocate at top of list...improved logging & messages)
                     property.value = dsName;
                     property.placeHolder = dsName;
                 }
             });
         } else {
             globals.LOG.debug(
-<<<<<<< HEAD
                 localize(
                     "createFile.log.debug.noValidNameEntered",
                     "No valid data set name entered. Operation cancelled"
                 )
-=======
-                localize("createFile.noValidNameEntered", "No valid data set name entered. Operation cancelled")
->>>>>>> 7a01b589 (Fixed Zach's comment...alphabetized attributes...put +Allocate at top of list...improved logging & messages)
             );
             vscode.window.showInformationMessage(localize("createFile.operationCancelled", "Operation cancelled."));
             return;
@@ -417,14 +404,10 @@ export async function createFile(node: IZoweDatasetTreeNode, datasetProvider: IZ
         const type = await vscode.window.showQuickPick(stepTwoChoices, stepTwoOptions);
         if (type == null) {
             globals.LOG.debug(
-<<<<<<< HEAD
                 localize(
                     "createFile.log.debug.noValidTypeSelected",
                     "No valid data set type selected. Operation cancelled."
                 )
-=======
-                localize("createFile.noValidTypeSelected", "No valid data set type selected. Operation cancelled.")
->>>>>>> 7a01b589 (Fixed Zach's comment...alphabetized attributes...put +Allocate at top of list...improved logging & messages)
             );
             vscode.window.showInformationMessage(localize("createFile.operationCancelled", "Operation cancelled."));
             return;
@@ -432,12 +415,7 @@ export async function createFile(node: IZoweDatasetTreeNode, datasetProvider: IZ
             // Add the default property values to the list of items
             // that will be shown in DS attributes for editing
             typeEnum = getDataSetTypeAndOptions(type).typeEnum;
-<<<<<<< HEAD
-<<<<<<< HEAD
             const cliDefaultsKey = globals.CreateDataSetTypeWithKeysEnum[typeEnum].replace("DATA_SET_", "");
-=======
-            const cliDefaultsKey = getDataSetTypeAndOptions(type).cliDefaultsKey;
->>>>>>> 19e8a5e4 (Made sure that attributes from the standard templates are loaded into the attributes list)
 
             propertiesFromDsType = zowe.CreateDefaults.DATA_SET[cliDefaultsKey];
             newDSProperties.forEach((property) => {
@@ -448,11 +426,6 @@ export async function createFile(node: IZoweDatasetTreeNode, datasetProvider: IZ
                     }
                 });
             });
-<<<<<<< HEAD
-=======
->>>>>>> 7a01b589 (Fixed Zach's comment...alphabetized attributes...put +Allocate at top of list...improved logging & messages)
-=======
->>>>>>> 19e8a5e4 (Made sure that attributes from the standard templates are loaded into the attributes list)
         }
 
         // 3rd step: Ask if we allocate, or show DS attributes
@@ -464,11 +437,7 @@ export async function createFile(node: IZoweDatasetTreeNode, datasetProvider: IZ
         } else {
             if (choice === " + Allocate Data Set") {
                 // User wants to allocate straightaway - skip Step 4
-<<<<<<< HEAD
                 globals.LOG.debug(localize("createFile.log.debug.allocatingNewDataSet", "Allocating new data set"));
-=======
-                globals.LOG.debug(localize("createFile.allocatingNewDataSet", "Allocating new data set"));
->>>>>>> 7a01b589 (Fixed Zach's comment...alphabetized attributes...put +Allocate at top of list...improved logging & messages)
                 vscode.window.showInformationMessage(
                     localize("createFile.allocatingNewDataSet", "Allocating new data set")
                 );
@@ -484,14 +453,11 @@ export async function createFile(node: IZoweDatasetTreeNode, datasetProvider: IZ
                     );
                     return;
                 } else {
-<<<<<<< HEAD
                     globals.LOG.debug(
                         localize("createFile.allocatingNewDataSet", "Attempting to allocate new data set")
-=======
-                    globals.LOG.debug(localize("createFile.allocatingNewDataSet", "Allocating new data set"));
+                    );
                     vscode.window.showInformationMessage(
-                        localize("createFile.allocatingNewDataSet", "Allocating new data set")
->>>>>>> 7a01b589 (Fixed Zach's comment...alphabetized attributes...put +Allocate at top of list...improved logging & messages)
+                        localize("createFile.allocatingNewDataSet", "Attempting to allocate new data set")
                     );
                 }
             }
@@ -501,7 +467,6 @@ export async function createFile(node: IZoweDatasetTreeNode, datasetProvider: IZ
         const dsPropsForAPI = {};
         newDSProperties.forEach((property) => {
             if (property.value) {
-<<<<<<< HEAD
                 if (property.key === `dsName`) {
                     dsName = property.value;
                 } else {
@@ -510,20 +475,6 @@ export async function createFile(node: IZoweDatasetTreeNode, datasetProvider: IZ
                     } else {
                         dsPropsForAPI[property.key] = property.value;
                     }
-=======
-                if (property.key === `nodeLabel`) {
-                    dsName = property.value;
-                } else {
-<<<<<<< HEAD
-                    dsPropsForAPI[property.key] = property.value;
->>>>>>> 7a01b589 (Fixed Zach's comment...alphabetized attributes...put +Allocate at top of list...improved logging & messages)
-=======
-                    if (typeof propertiesFromDsType[property.key] === "number") {
-                        dsPropsForAPI[property.key] = Number(property.value);
-                    } else {
-                        dsPropsForAPI[property.key] = property.value;
-                    }
->>>>>>> 19e8a5e4 (Made sure that attributes from the standard templates are loaded into the attributes list)
                 }
             }
         });
@@ -574,26 +525,41 @@ export async function createFile(node: IZoweDatasetTreeNode, datasetProvider: IZ
 async function handleUserSelection(newDSProperties, dsType): Promise<string> {
     // Create the array of items in the quickpick list
     const qpItems = [];
+    let validationFailed = false;
     qpItems.push(new FilterItem(` + Allocate Data Set`, null, true));
     newDSProperties.forEach((prop) => {
-        qpItems.push(new FilterItem(prop.label, prop.value, true));
+        if (prop.detail) {
+            validationFailed = true;
+        }
+        qpItems.push(
+            new FilterItem(
+                prop.label,
+                prop.value,
+                true,
+                prop.detail ? `$(extensions-warning-message) ${prop.detail}` : null
+            )
+        );
     });
 
     // Provide the settings for the quickpick's appearance & behavior
     const quickpick = vscode.window.createQuickPick();
-    quickpick.placeholder = localize("createFileNoWebview.options.prompt", "Click on parameters to change them");
     quickpick.ignoreFocusOut = true;
+    quickpick.title = localize("createFileNoWebview.options.prompt", "Click on parameters to change them.");
     quickpick.items = [...qpItems];
     quickpick.matchOnDescription = false;
+    if (validationFailed) {
+        quickpick.placeholder = localize(
+            "createFileNoWebview.options.prompt",
+            "Parameters are invalid. Please fill out all required fields."
+        );
+    } else {
+        quickpick.placeholder = null;
+    }
     quickpick.onDidHide(() => {
         if (quickpick.selectedItems.length === 0) {
-<<<<<<< HEAD
             globals.LOG.debug(
                 localize("createFile.log.debug.noOptionSelected", "No option selected. Operation cancelled.")
             );
-=======
-            globals.LOG.debug(localize("createFile.noOptionSelected", "No option selected. Operation cancelled."));
->>>>>>> 7a01b589 (Fixed Zach's comment...alphabetized attributes...put +Allocate at top of list...improved logging & messages)
             vscode.window.showInformationMessage(localize("createFile.operationCancelled", "Operation cancelled."));
             return;
         }
@@ -610,7 +576,10 @@ async function handleUserSelection(newDSProperties, dsType): Promise<string> {
         // Parse pattern for selected attribute
         switch (pattern) {
             case " + Allocate Data Set":
-                return new Promise((resolve) => resolve(` + Allocate Data Set`));
+                if (validateDSAttributes(newDSProperties)) {
+                    return new Promise((resolve) => resolve(` + Allocate Data Set`));
+                }
+                break;
             case "Show Attributes":
                 newDSProperties.find((prop) => prop.label === pattern).value = await vscode.window.showQuickPick([
                     `True`,
@@ -626,6 +595,71 @@ async function handleUserSelection(newDSProperties, dsType): Promise<string> {
         }
         return Promise.resolve(handleUserSelection(newDSProperties, dsType));
     }
+}
+
+function validateDSAttributes(attributesToValidate: any[]) {
+    let inputsValid = true;
+    attributesToValidate.forEach((attribute) => {
+        switch (attribute.key) {
+            case "alcunit":
+                break;
+            case "avgblk":
+                break;
+            case "blksize":
+                break;
+            case "dataclass":
+                break;
+            case "unit":
+                break;
+            case "dirblk":
+                break;
+            case "dsntype":
+                if (attribute.value === "") {
+                    inputsValid = false;
+                    attribute.detail = localize("validateDSAttributes.dsntype.empty", "Field required");
+                }
+                break;
+            case "mgntclass":
+                break;
+            case "nodeLabel":
+                break;
+            case "dsorg":
+                break;
+            case "primary":
+                if (attribute.value === "") {
+                    inputsValid = false;
+                    attribute.detail = localize("validateDSAttributes.primary.empty", "Field required");
+                }
+                break;
+            case "recfm":
+                if (attribute.value === "") {
+                    inputsValid = false;
+                    attribute.detail = localize("validateDSAttributes.recfm.empty", "Field required");
+                }
+                break;
+            case "lrecl":
+                if (attribute.value === "") {
+                    inputsValid = false;
+                    attribute.detail = localize("validateDSAttributes.lrecl.empty", "Field required");
+                }
+                break;
+            case "secondary":
+                if (attribute.value === "") {
+                    inputsValid = false;
+                    attribute.detail = localize("validateDSAttributes.secondary.empty", "Field required");
+                }
+                break;
+            case "showAttributes":
+                break;
+            case "size":
+                break;
+            case "storclass":
+                break;
+            case "volser":
+                break;
+        }
+    });
+    return inputsValid;
 }
 
 /**

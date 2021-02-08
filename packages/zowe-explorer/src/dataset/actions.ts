@@ -220,14 +220,42 @@ export async function uploadFromJsonDialog(
     const nodeArray = fileDataAsJson[Object.keys(fileDataAsJson)[0]];
 
     if (isTemplate) {
-        // Create templates
-        for (const template of nodeArray) {
-            if (template.type !== "MEMBER") {
-                const templateAsString = JSON.stringify(template);
-                datasetProvider.addTemplate(templateAsString);
-                globals.LOG.debug(localize("uploadFromJsonDialog.log.debug.templateAdded", "New template added."));
+        // Don't add members as templates
+        nodeArray.forEach((template, index) => {
+            if (template.type && template.type.toUpperCase() === "MEMBER") {
+                nodeArray.splice(index, 1);
+            }
+        });
+
+        // Check for duplicate template labels
+        for (const [index, template] of nodeArray.entries()) {
+            for (let index2 = index; index2 < nodeArray.length; ++index2) {
+                if (template["template-label"] === nodeArray[index2]["template-label"] && index !== index2) {
+                    vscode.window.showErrorMessage(
+                        localize("selectFile.templateLabel.error", "Error: The file contains duplicate template names.")
+                    );
+                    return;
+                }
             }
         }
+
+        // Give unlabeled templates a standard label
+        nodeArray.forEach((template) => {
+            if (!template["template-label"]) {
+                template["template-label"] = localize(
+                    "uploadFromJsonDialog.template.standardLabel",
+                    "Unnamed Template"
+                );
+            }
+        });
+
+        // Create templates
+        for (const template of nodeArray) {
+            const templateAsString = JSON.stringify(template);
+            datasetProvider.addTemplate(templateAsString);
+            globals.LOG.debug(localize("uploadFromJsonDialog.log.debug.templateAdded", "New template added."));
+        }
+
         vscode.window.showInformationMessage(
             localize("uploadFromJsonDialog.allTemplatesAdded", "All templates added.")
         );

@@ -8,6 +8,8 @@
   "createDataSet.error": "Error encountered when creating data set! ",
   "enterPattern.pattern": "You must enter a pattern.",
   "selectFile.parseJson.error": "Parsing file as JSON failed.",
+  "selectFile.templateLabel.error": "Error: The file contains duplicate template names.",
+  "uploadFromJsonDialog.template.standardLabel": "Unnamed Template",
   "uploadFromJsonDialog.log.debug.templateAdded": "New template added.",
   "uploadFromJsonDialog.allTemplatesAdded": "All templates added.",
   "selectFile.allocateNode.error": "Allocating node {0} failed.",

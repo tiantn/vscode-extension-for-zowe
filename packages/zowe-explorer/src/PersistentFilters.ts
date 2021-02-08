@@ -62,7 +62,7 @@ export class PersistentFilters {
     public async addTemplate(newTemplate: string) {
         // Remove any entries that match
         this.mTemplates = this.mTemplates.filter((template) => {
-            return template.trim() !== newTemplate.trim();
+            return JSON.parse(template)["template-label"] !== JSON.parse(newTemplate)["template-label"];
         });
         this.mTemplates.push(newTemplate);
 

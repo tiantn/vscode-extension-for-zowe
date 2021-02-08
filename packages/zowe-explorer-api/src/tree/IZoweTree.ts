@@ -165,7 +165,6 @@ export interface IZoweTree<T> extends vscode.TreeDataProvider<T> {
      * @param node: the root node to be searched from
      */
     filterPrompt(node: IZoweNodeType);
-
     /**
      * Adds a search history element to persisted settings.
      * @param node: the root node representing the operation
@@ -175,6 +174,15 @@ export interface IZoweTree<T> extends vscode.TreeDataProvider<T> {
      * Retrieves search history elements from persisted settings.
      */
     getSearchHistory();
+    /**
+     * Adds a template to persisted settings.
+     * @param template: the node to be used as a template, in string format
+     */
+    addTemplate(template: string);
+    /**
+     * Retrieves templates from persisted settings.
+     */
+    getTemplates();
     /**
      * Returns the type of the tree provider.
      * @returns {PersistenceSchemaEnum} the type of tree: Dataset, USS, or Job

@@ -689,6 +689,15 @@ export class DatasetTree extends ZoweTreeProvider implements IZoweTree<IZoweData
         }
     }
 
+    public async addTemplate(template: string) {
+        this.mHistory.addTemplate(template);
+        this.refresh();
+    }
+
+    public getTemplates(): string[] {
+        return this.mHistory.getTemplates();
+    }
+
     public async addSearchHistory(criteria: string) {
         this.mHistory.addSearchHistory(criteria);
         this.refresh();

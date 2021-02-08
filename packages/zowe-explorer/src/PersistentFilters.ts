@@ -10,7 +10,6 @@
  */
 
 import * as vscode from "vscode";
-import * as zowe from "@zowe/cli";
 
 /**
  * Standard history and favorite persistance handling routines
@@ -31,11 +30,13 @@ export class PersistentFilters {
         return settings.get(key);
     }
     private static readonly favorites: string = "favorites";
+    private static readonly templates: string = "templates";
     private static readonly searchHistory: string = "searchHistory";
     private static readonly fileHistory: string = "fileHistory";
     private static readonly sessions: string = "sessions";
 
     public schema: string;
+    private mTemplates: string[] = [];
     private mSearchHistory: string[] = [];
     private mFileHistory: string[] = [];
     private mSessions: string[] = [];
@@ -48,6 +49,27 @@ export class PersistentFilters {
     /*********************************************************************************************************************************************/
     /* Add functions, for adding items to the persistent settings
     /*********************************************************************************************************************************************/
+
+    /**
+     * Adds one data set template to the local store and
+     * updates persistent store.
+     *
+     * If the entry matches a previous entry it is removed from the list
+     * at that position in the stack.
+     *
+     * @param {string} criteria - a session name
+     */
+    public async addTemplate(newTemplate: string) {
+        // Remove any entries that match
+        this.mTemplates = this.mTemplates.filter((template) => {
+            return template.trim() !== newTemplate.trim();
+        });
+        this.mTemplates.push(newTemplate);
+
+        // Use standard sorting
+        this.mTemplates.sort();
+        this.updateTemplates();
+    }
 
     /**
      * Adds one line of search history to the local store and
@@ -135,6 +157,10 @@ export class PersistentFilters {
     /* Get/read functions, for returning the values stored in the persistent arrays
     /*********************************************************************************************************************************************/
 
+    public getTemplates(): string[] {
+        return this.mTemplates;
+    }
+
     public getSearchHistory(): string[] {
         return this.mSearchHistory;
     }
@@ -157,6 +183,14 @@ export class PersistentFilters {
     /*********************************************************************************************************************************************/
     /* Remove functions, for removing one item from the persistent arrays
     /*********************************************************************************************************************************************/
+
+    public async removeTemplate(template: string) {
+        // Remove any entries that match
+        this.mTemplates = this.mTemplates.filter((element) => {
+            return element.trim() !== template.trim();
+        });
+        this.updateTemplates();
+    }
 
     public async removeSession(name: string) {
         // Remove any entries that match
@@ -183,6 +217,11 @@ export class PersistentFilters {
     /* Reset functions, for resetting the persistent array to empty (in the extension and in settings.json)
     /*********************************************************************************************************************************************/
 
+    public async resetTemplates() {
+        this.mTemplates = [];
+        this.updateTemplates();
+    }
+
     public async resetSearchHistory() {
         this.mSearchHistory = [];
         this.updateSearchHistory();
@@ -207,6 +246,15 @@ export class PersistentFilters {
         const settings: any = { ...vscode.workspace.getConfiguration(this.schema) };
         if (settings.persistence) {
             settings.favorites = favorites;
+            await vscode.workspace.getConfiguration().update(this.schema, settings, vscode.ConfigurationTarget.Global);
+        }
+    }
+
+    private async updateTemplates() {
+        // settings are read-only, so make a clone
+        const settings: any = { ...vscode.workspace.getConfiguration(this.schema) };
+        if (settings.persistence) {
+            settings.templates = this.mTemplates;
             await vscode.workspace.getConfiguration().update(this.schema, settings, vscode.ConfigurationTarget.Global);
         }
     }
@@ -239,13 +287,20 @@ export class PersistentFilters {
     }
 
     private async initialize() {
+        let templateLines: string[];
         let searchHistoryLines: string[];
         let sessionLines: string[];
         let fileHistoryLines: string[];
         if (vscode.workspace.getConfiguration(this.schema)) {
+            templateLines = vscode.workspace.getConfiguration(this.schema).get(PersistentFilters.templates);
             searchHistoryLines = vscode.workspace.getConfiguration(this.schema).get(PersistentFilters.searchHistory);
             sessionLines = vscode.workspace.getConfiguration(this.schema).get(PersistentFilters.sessions);
             fileHistoryLines = vscode.workspace.getConfiguration(this.schema).get(PersistentFilters.fileHistory);
+        }
+        if (templateLines) {
+            this.mTemplates = templateLines;
+        } else {
+            this.resetTemplates();
         }
         if (searchHistoryLines) {
             this.mSearchHistory = searchHistoryLines;

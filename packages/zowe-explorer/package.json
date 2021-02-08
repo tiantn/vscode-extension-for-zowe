@@ -244,6 +244,10 @@
         "title": "%uploadFromJsonDialog%"
       },
       {
+        "command": "zowe.uploadFromJsonTemplate",
+        "title": "%uploadFromJsonTemplate%"
+      },
+      {
         "command": "zowe.editDataSet",
         "title": "%editDataSet%",
         "icon": {
@@ -652,6 +656,11 @@
           "when": "view == zowe.explorer && viewItem =~ /^(?!.*_fav.*)session.*/",
           "command": "zowe.uploadFromJsonDialog",
           "group": "1_create@3"
+        },
+        {
+          "when": "view == zowe.explorer && viewItem =~ /^(?!.*_fav.*)session.*/",
+          "command": "zowe.uploadFromJsonTemplate",
+          "group": "1_create@4"
         },
         {
           "when": "view == zowe.uss.explorer && viewItem =~ /^(?!.*_fav.*)ussSession.*/",

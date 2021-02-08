@@ -187,7 +187,11 @@ export async function uploadDialog(node: ZoweDatasetNode, datasetProvider: IZowe
  * On failure to parse file as JSON, no attempt to allocate will be made.
  * On failure to allocate, an API error will be thrown.
  */
-export async function uploadFromJsonDialog(node: ZoweDatasetNode, datasetProvider: IZoweTree<IZoweDatasetTreeNode>) {
+export async function uploadFromJsonDialog(
+    node: ZoweDatasetNode,
+    datasetProvider: IZoweTree<IZoweDatasetTreeNode>,
+    isTemplate?: boolean
+) {
     const fileOpenOptions = {
         canSelectFiles: true,
         openLabel: "Upload File",
@@ -213,69 +217,83 @@ export async function uploadFromJsonDialog(node: ZoweDatasetNode, datasetProvide
         errorHandling(err);
         return;
     }
-
-    // Allocate data sets
-    let newFilterString = "";
     const nodeArray = fileDataAsJson[Object.keys(fileDataAsJson)[0]];
-    const memberArray = [];
-    for (const newNode of nodeArray) {
-        newNode.type = newNode.type.toUpperCase();
-        try {
-            if (newNode.type === "MEMBER") {
-                // Members should be allocated later, in case their parent is inside the JSON file
-                memberArray.push(newNode);
-            } else {
-                const nodeOptions = getDataSetTypeAndOptions(newNode.type);
-                let mergedProperties = nodeOptions.createOptions;
-                if (newNode.properties) {
-                    mergedProperties = { ...mergedProperties, ...newNode.properties };
-                }
-                await ZoweExplorerApiRegister.getMvsApi(node.getProfile()).createDataSet(
-                    nodeOptions.typeEnum,
-                    newNode.label,
-                    mergedProperties
-                );
-                newFilterString += newFilterString ? `,${newNode.label}` : `${newNode.label}`;
+
+    if (isTemplate) {
+        // Create templates
+        for (const template of nodeArray) {
+            if (template.type !== "MEMBER") {
+                const templateAsString = JSON.stringify(template);
+                datasetProvider.addTemplate(templateAsString);
+                globals.LOG.debug(localize("uploadFromJsonDialog.log.debug.templateAdded", "New template added."));
             }
-        } catch (err) {
-            vscode.window.showErrorMessage(
-                localize("selectFile.allocateNode.error", "Allocating node {0} failed.", newNode.label)
-            );
-            errorHandling(err);
         }
-    }
-
-    // Allocate members
-    for (const member of memberArray) {
-        try {
-            await ZoweExplorerApiRegister.getMvsApi(node.getProfile()).createDataSetMember(
-                `${member.parent}(${member.label})`
-            );
-            newFilterString += newFilterString ? `,${member.parent}` : `${member.parent}`;
-        } catch (err) {
-            vscode.window.showErrorMessage(
-                localize("selectFile.allocateNode.error", "Allocating node {0} failed.", member.label)
-            );
-            errorHandling(err);
-        }
-    }
-
-    // Filter the tree
-    newFilterString = await datasetProvider.createFilterString(newFilterString, node);
-    node.tooltip = node.pattern = newFilterString.toUpperCase();
-    datasetProvider.addSearchHistory(newFilterString);
-
-    // Refresh Tree View & Favorites
-    datasetProvider.refreshElement(node);
-    if (contextually.isFavoriteContext(node)) {
-        const nonFavNode = datasetProvider.findNonFavoritedNode(node);
-        if (nonFavNode) {
-            datasetProvider.refreshElement(nonFavNode);
-        }
+        vscode.window.showInformationMessage(
+            localize("uploadFromJsonDialog.allTemplatesAdded", "All templates added.")
+        );
     } else {
-        const favNode = datasetProvider.findFavoritedNode(node);
-        if (favNode) {
-            datasetProvider.refreshElement(favNode);
+        // Allocate data sets
+        let newFilterString = "";
+        const memberArray = [];
+        for (const newNode of nodeArray) {
+            newNode.type = newNode.type.toUpperCase();
+            try {
+                if (newNode.type === "MEMBER") {
+                    // Members should be allocated later, in case their parent is inside the JSON file
+                    memberArray.push(newNode);
+                } else {
+                    const nodeOptions = getDataSetTypeAndOptions(newNode.type);
+                    let mergedProperties = nodeOptions.createOptions;
+                    if (newNode.properties) {
+                        mergedProperties = { ...mergedProperties, ...newNode.properties };
+                    }
+                    await ZoweExplorerApiRegister.getMvsApi(node.getProfile()).createDataSet(
+                        nodeOptions.typeEnum,
+                        newNode.label,
+                        mergedProperties
+                    );
+                    newFilterString += newFilterString ? `,${newNode.label}` : `${newNode.label}`;
+                }
+            } catch (err) {
+                vscode.window.showErrorMessage(
+                    localize("selectFile.allocateNode.error", "Allocating node {0} failed.", newNode.label)
+                );
+                errorHandling(err);
+            }
+        }
+
+        // Allocate members
+        for (const member of memberArray) {
+            try {
+                await ZoweExplorerApiRegister.getMvsApi(node.getProfile()).createDataSetMember(
+                    `${member.parent}(${member.label})`
+                );
+                newFilterString += newFilterString ? `,${member.parent}` : `${member.parent}`;
+            } catch (err) {
+                vscode.window.showErrorMessage(
+                    localize("selectFile.allocateNode.error", "Allocating node {0} failed.", member.label)
+                );
+                errorHandling(err);
+            }
+        }
+
+        // Filter the tree
+        newFilterString = await datasetProvider.createFilterString(newFilterString, node);
+        node.tooltip = node.pattern = newFilterString.toUpperCase();
+        datasetProvider.addSearchHistory(newFilterString);
+
+        // Refresh Tree View & Favorites
+        datasetProvider.refreshElement(node);
+        if (contextually.isFavoriteContext(node)) {
+            const nonFavNode = datasetProvider.findNonFavoritedNode(node);
+            if (nonFavNode) {
+                datasetProvider.refreshElement(nonFavNode);
+            }
+        } else {
+            const favNode = datasetProvider.findFavoritedNode(node);
+            if (favNode) {
+                datasetProvider.refreshElement(favNode);
+            }
         }
     }
 }
@@ -488,6 +506,20 @@ export async function createFile(node: IZoweDatasetTreeNode, datasetProvider: IZ
     // tslint:disable-next-line: prefer-const
     let newDSProperties = JSON.parse(JSON.stringify(globals.DATA_SET_PROPERTIES));
 
+    // Get any DS templates stored in settings.json
+    const customTemplates = datasetProvider.getTemplates().map((template) => JSON.parse(template));
+    if (customTemplates.length > 0) {
+        customTemplates.forEach((template) => {
+            let choiceLabel;
+            if (template["template-label"]) {
+                choiceLabel = template["template-label"];
+            } else {
+                choiceLabel = template.label;
+            }
+            stepTwoChoices.push(choiceLabel);
+        });
+    }
+
     datasetProvider.checkCurrentProfile(node);
     if (
         Profiles.getInstance().validProfile === ValidProfileEnum.VALID ||
@@ -517,8 +549,9 @@ export async function createFile(node: IZoweDatasetTreeNode, datasetProvider: IZ
             return;
         }
 
-        // 2nd step: Get data set type
-        const type = await vscode.window.showQuickPick(stepTwoChoices, stepTwoOptions);
+        // 2nd step: Select data set type or template
+        let type = await vscode.window.showQuickPick(stepTwoChoices, stepTwoOptions);
+        let selectedTemplate = null;
         if (type == null) {
             globals.LOG.debug(
                 localize(
@@ -529,17 +562,29 @@ export async function createFile(node: IZoweDatasetTreeNode, datasetProvider: IZ
             vscode.window.showInformationMessage(localize("createFile.operationCancelled", "Operation cancelled."));
             return;
         } else {
-            // Add the default property values to the list of items
-            // that will be shown in DS attributes for editing
+            selectedTemplate = customTemplates.find(
+                (template) => template["template-label"] && template["template-label"] === type
+            );
+            if (!selectedTemplate) {
+                selectedTemplate = customTemplates.find((template) => template["template-label"] === type);
+            }
+            type = selectedTemplate ? selectedTemplate.type : type;
+
+            // Add the default/template attribute values to the editable list
             typeEnum = getDataSetTypeAndOptions(type).typeEnum;
             const cliDefaultsKey = globals.CreateDataSetTypeWithKeysEnum[typeEnum].replace("DATA_SET_", "");
-
             propertiesFromDsType = zowe.CreateDefaults.DATA_SET[cliDefaultsKey];
             newDSProperties.forEach((property) => {
                 Object.keys(propertiesFromDsType).forEach((typeProperty) => {
                     if (typeProperty === property.key) {
                         property.value = propertiesFromDsType[typeProperty].toString();
                         property.placeHolder = propertiesFromDsType[typeProperty];
+                    }
+                });
+                Object.keys(selectedTemplate.properties).forEach((typeProperty) => {
+                    if (typeProperty === property.key) {
+                        property.value = selectedTemplate.properties[typeProperty].toString();
+                        property.placeHolder = selectedTemplate.properties[typeProperty];
                     }
                 });
             });

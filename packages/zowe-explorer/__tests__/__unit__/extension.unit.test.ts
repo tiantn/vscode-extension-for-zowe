@@ -126,6 +126,7 @@ async function createGlobalMocks() {
             "zowe.allocateLike",
             "zowe.uploadDialog",
             "zowe.uploadFromJsonDialog",
+            "zowe.uploadFromJsonTemplate",
             "zowe.deleteMember",
             "zowe.editDataSet",
             "zowe.editMember",

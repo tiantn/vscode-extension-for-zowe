@@ -142,6 +142,15 @@ export class ZoweTreeProvider {
         }
     }
 
+    public async addTemplate(template: string) {
+        this.mHistory.addTemplate(template);
+        this.refresh();
+    }
+
+    public getTemplates() {
+        return this.mHistory.getTemplates();
+    }
+
     public findNonFavoritedNode(element: IZoweTreeNode) {
         return undefined;
     }

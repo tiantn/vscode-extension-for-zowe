@@ -364,7 +364,7 @@ export async function createFile(node: IZoweDatasetTreeNode, datasetProvider: IZ
         localize("createFile.dataSetSequential", "Data Set Sequential"),
     ];
     const stepThreeChoices = [
-        localize("createFile.allocate", " + Allocate Data Set"),
+        localize("createFile.allocate", "+ Allocate Data Set"),
         localize("createFile.editAttributes", "Edit Attributes"),
     ];
     // Make a nice new mutable array for the DS properties
@@ -435,7 +435,7 @@ export async function createFile(node: IZoweDatasetTreeNode, datasetProvider: IZ
             vscode.window.showInformationMessage(localize("createFile.operationCancelled", "Operation cancelled."));
             return;
         } else {
-            if (choice === " + Allocate Data Set") {
+            if (choice === "+ Allocate Data Set") {
                 // User wants to allocate straightaway - skip Step 4
                 globals.LOG.debug(localize("createFile.log.debug.allocatingNewDataSet", "Allocating new data set"));
                 vscode.window.showInformationMessage(
@@ -526,7 +526,7 @@ async function handleUserSelection(newDSProperties, dsType): Promise<string> {
     // Create the array of items in the quickpick list
     const qpItems = [];
     let validationFailed = false;
-    qpItems.push(new FilterItem(` + Allocate Data Set`, null, true));
+    qpItems.push(new FilterItem(`+ Allocate Data Set`, null, true));
     newDSProperties.forEach((prop) => {
         if (prop.detail) {
             validationFailed = true;
@@ -575,9 +575,9 @@ async function handleUserSelection(newDSProperties, dsType): Promise<string> {
     if (pattern) {
         // Parse pattern for selected attribute
         switch (pattern) {
-            case " + Allocate Data Set":
+            case "+ Allocate Data Set":
                 if (validateDSAttributes(newDSProperties)) {
-                    return new Promise((resolve) => resolve(` + Allocate Data Set`));
+                    return new Promise((resolve) => resolve(`+ Allocate Data Set`));
                 }
                 break;
             case "Show Attributes":

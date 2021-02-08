@@ -143,7 +143,7 @@ describe("Extension Integration Tests", () => {
 
             // 2nd step: User selects DS type
             // 3rd step: User tries to allocate
-            const returnVals = ["Data Set Sequential", " + Allocate Data Set"];
+            const returnVals = ["Data Set Sequential", "+ Allocate Data Set"];
             const quickPickStub = sandbox.stub(vscode.window, "showQuickPick");
             returnVals.forEach((value, index) => {
                 quickPickStub.onCall(index).returns(value);
@@ -166,9 +166,9 @@ describe("Extension Integration Tests", () => {
             // 3rd step: User tries to allocate
             const returnVals = [
                 "Data Set Sequential",
-                " + Allocate Data Set",
+                "+ Allocate Data Set",
                 "Data Set Sequential",
-                " + Allocate Data Set",
+                "+ Allocate Data Set",
             ];
             const quickPickStub = sandbox.stub(vscode.window, "showQuickPick");
             returnVals.forEach((value, index) => {

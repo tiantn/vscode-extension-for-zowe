@@ -50,6 +50,7 @@ export function createDatasetTree(sessionNode: ZoweDatasetNode, treeView: any, f
         addFileHistory: jest.fn(),
         addFavorite: jest.fn(),
         getSearchHistory: jest.fn(),
+        getTemplates: jest.fn().mockImplementation(() => []),
         getFileHistory: jest.fn(),
         refresh: jest.fn(),
         refreshElement: jest.fn(),

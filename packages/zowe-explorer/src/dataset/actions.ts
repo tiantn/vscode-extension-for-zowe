@@ -581,12 +581,14 @@ export async function createFile(node: IZoweDatasetTreeNode, datasetProvider: IZ
                         property.placeHolder = propertiesFromDsType[typeProperty];
                     }
                 });
-                Object.keys(selectedTemplate.properties).forEach((typeProperty) => {
-                    if (typeProperty === property.key) {
-                        property.value = selectedTemplate.properties[typeProperty].toString();
-                        property.placeHolder = selectedTemplate.properties[typeProperty];
-                    }
-                });
+                if (selectedTemplate) {
+                    Object.keys(selectedTemplate.properties).forEach((typeProperty) => {
+                        if (typeProperty === property.key) {
+                            property.value = selectedTemplate.properties[typeProperty].toString();
+                            property.placeHolder = selectedTemplate.properties[typeProperty];
+                        }
+                    });
+                }
             });
         }
 

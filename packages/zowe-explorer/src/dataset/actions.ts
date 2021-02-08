@@ -164,6 +164,122 @@ export async function uploadDialog(node: ZoweDatasetNode, datasetProvider: IZowe
     }
 }
 
+/**
+ * Allow the user to upload data sets and members from a JSON file
+ * File format should be as follows:
+ * {
+ *      "rootNode": [
+ *          {
+ *              "type": "Data Set Partitioned",
+ *              "label": "HLQ.test",
+ *              "properties": {
+ *                  "lrecl": 80
+ *              }
+ *          },
+ *          {
+ *              "type": "Member",
+ *              "label": "newMember",
+ *              "parent": "HLQ.test"
+ *          }
+ *      ]
+ * }
+ * rootNode can have any name.
+ * On failure to parse file as JSON, no attempt to allocate will be made.
+ * On failure to allocate, an API error will be thrown.
+ */
+export async function uploadFromJsonDialog(node: ZoweDatasetNode, datasetProvider: IZoweTree<IZoweDatasetTreeNode>) {
+    const fileOpenOptions = {
+        canSelectFiles: true,
+        openLabel: "Upload File",
+        canSelectMany: false,
+    };
+
+    // Ask user to upload a file
+    const filePath: vscode.Uri[] = await vscode.window.showOpenDialog(fileOpenOptions);
+    let filePathAsString;
+    if (filePath) {
+        filePathAsString = filePath[0].fsPath;
+    } else {
+        vscode.window.showInformationMessage(localize("enterPattern.pattern", "No selection made."));
+        return;
+    }
+
+    // Try to parse file as JSON
+    let fileDataAsJson;
+    try {
+        fileDataAsJson = JSON.parse(fs.readFileSync(filePathAsString).toString());
+    } catch (err) {
+        vscode.window.showErrorMessage(localize("selectFile.parseJson.error", "Parsing file as JSON failed."));
+        errorHandling(err);
+        return;
+    }
+
+    // Allocate data sets
+    let newFilterString = "";
+    const nodeArray = fileDataAsJson[Object.keys(fileDataAsJson)[0]];
+    const memberArray = [];
+    for (const newNode of nodeArray) {
+        newNode.type = newNode.type.toUpperCase();
+        try {
+            if (newNode.type === "MEMBER") {
+                // Members should be allocated later, in case their parent is inside the JSON file
+                memberArray.push(newNode);
+            } else {
+                const nodeOptions = getDataSetTypeAndOptions(newNode.type);
+                let mergedProperties = nodeOptions.createOptions;
+                if (newNode.properties) {
+                    mergedProperties = { ...mergedProperties, ...newNode.properties };
+                }
+                await ZoweExplorerApiRegister.getMvsApi(node.getProfile()).createDataSet(
+                    nodeOptions.typeEnum,
+                    newNode.label,
+                    mergedProperties
+                );
+                newFilterString += newFilterString ? `,${newNode.label}` : `${newNode.label}`;
+            }
+        } catch (err) {
+            vscode.window.showErrorMessage(
+                localize("selectFile.allocateNode.error", "Allocating node {0} failed.", newNode.label)
+            );
+            errorHandling(err);
+        }
+    }
+
+    // Allocate members
+    for (const member of memberArray) {
+        try {
+            await ZoweExplorerApiRegister.getMvsApi(node.getProfile()).createDataSetMember(
+                `${member.parent}(${member.label})`
+            );
+            newFilterString += newFilterString ? `,${member.parent}` : `${member.parent}`;
+        } catch (err) {
+            vscode.window.showErrorMessage(
+                localize("selectFile.allocateNode.error", "Allocating node {0} failed.", member.label)
+            );
+            errorHandling(err);
+        }
+    }
+
+    // Filter the tree
+    newFilterString = await datasetProvider.createFilterString(newFilterString, node);
+    node.tooltip = node.pattern = newFilterString.toUpperCase();
+    datasetProvider.addSearchHistory(newFilterString);
+
+    // Refresh Tree View & Favorites
+    datasetProvider.refreshElement(node);
+    if (contextually.isFavoriteContext(node)) {
+        const nonFavNode = datasetProvider.findNonFavoritedNode(node);
+        if (nonFavNode) {
+            datasetProvider.refreshElement(nonFavNode);
+        }
+    } else {
+        const favNode = datasetProvider.findFavoritedNode(node);
+        if (favNode) {
+            datasetProvider.refreshElement(favNode);
+        }
+    }
+}
+
 export async function uploadFile(node: ZoweDatasetNode, doc: vscode.TextDocument) {
     try {
         const datasetName = node.label;
@@ -300,28 +416,29 @@ export function getDataSetTypeAndOptions(type: string) {
     let typeEnum;
     let cliDefaultsKey;
     let createOptions;
+    type = type.toUpperCase();
     switch (type) {
-        case localize("createFile.dataSetBinary", "Data Set Binary"):
+        case "DATA SET BINARY":
             typeEnum = zowe.CreateDataSetTypeEnum.DATA_SET_BINARY;
             cliDefaultsKey = "BINARY";
             createOptions = vscode.workspace.getConfiguration("Zowe-Default-Datasets-Binary");
             break;
-        case localize("createFile.dataSetC", "Data Set C"):
+        case "DATA SET C":
             typeEnum = zowe.CreateDataSetTypeEnum.DATA_SET_C;
             cliDefaultsKey = "C";
             createOptions = vscode.workspace.getConfiguration("Zowe-Default-Datasets-C");
             break;
-        case localize("createFile.dataSetClassic", "Data Set Classic"):
+        case "DATA SET CLASSIC":
             typeEnum = zowe.CreateDataSetTypeEnum.DATA_SET_CLASSIC;
             cliDefaultsKey = "CLASSIC";
             createOptions = vscode.workspace.getConfiguration("Zowe-Default-Datasets-Classic");
             break;
-        case localize("createFile.dataSetPartitioned", "Data Set Partitioned"):
+        case "DATA SET PARTITIONED":
             typeEnum = zowe.CreateDataSetTypeEnum.DATA_SET_PARTITIONED;
             cliDefaultsKey = "PARTITIONED";
             createOptions = vscode.workspace.getConfiguration("Zowe-Default-Datasets-PDS");
             break;
-        case localize("createFile.dataSetSequential", "Data Set Sequential"):
+        case "DATA SET SEQUENTIAL":
             typeEnum = zowe.CreateDataSetTypeEnum.DATA_SET_SEQUENTIAL;
             cliDefaultsKey = "SEQUENTIAL";
             createOptions = vscode.workspace.getConfiguration("Zowe-Default-Datasets-PS");

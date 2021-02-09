@@ -164,6 +164,9 @@ export class USSTree extends ZoweTreeProvider implements IZoweTree<IZoweUSSTreeN
     public uploadDialog(node: IZoweUSSTreeNode) {
         throw new Error("Method not implemented.");
     }
+    public removeTemplate(template: string) {
+        throw new Error("Method not implemented.");
+    }
 
     /**
      * Finds the equivalent node as a favorite.

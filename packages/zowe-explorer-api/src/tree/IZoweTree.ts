@@ -184,6 +184,10 @@ export interface IZoweTree<T> extends vscode.TreeDataProvider<T> {
      */
     getTemplates();
     /**
+     * Removes a template from persisted settings.
+     */
+    removeTemplate(template: string);
+    /**
      * Returns the type of the tree provider.
      * @returns {PersistenceSchemaEnum} the type of tree: Dataset, USS, or Job
      */

@@ -117,6 +117,9 @@ export class ZosJobsProvider extends ZoweTreeProvider implements IZoweTree<IZowe
     public filterPrompt(node: IZoweJobTreeNode) {
         return this.searchPrompt(node);
     }
+    public removeTemplate(template: string) {
+        throw new Error("Method not implemented.");
+    }
 
     /**
      * Takes argument of type IZoweJobTreeNode and retrieves all of the first level children

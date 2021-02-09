@@ -32,7 +32,6 @@ import { ZoweDatasetNode } from "./ZoweDatasetNode";
 import { DatasetTree } from "./DatasetTree";
 import * as contextually from "../shared/context";
 import { setFileSaved } from "../utils/workspace";
-import { PersistentFilters } from "../PersistentFilters";
 
 // Set up localization
 import * as nls from "vscode-nls";
@@ -635,7 +634,7 @@ export async function createFile(node: IZoweDatasetTreeNode, datasetProvider: IZ
                 );
             } else {
                 // 4th step (optional): Show data set attributes
-                const choice2 = await handleUserSelection(newDSProperties, type);
+                const choice2 = await handleUserSelection(newDSProperties);
                 if (choice2 == null) {
                     globals.LOG.debug(
                         localize("createFile.noOptionSelected", "No option selected. Operation cancelled.")
@@ -714,11 +713,104 @@ export async function createFile(node: IZoweDatasetTreeNode, datasetProvider: IZ
     }
 }
 
-async function handleUserSelection(newDSProperties, dsType): Promise<string> {
+/**
+ * Creates a new file and uploads to the server
+ * !!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!
+ * TODO: Consider changing configuration to allow "custom" data set specifications
+ * !!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!
+ * @export
+ * @param {IZoweDatasetTreeNode} node - Desired Zowe session
+ * @param {DatasetTree} datasetProvider - the tree which contains the nodes
+ */
+export async function manageTemplates(node: IZoweDatasetTreeNode, datasetProvider: IZoweTree<IZoweDatasetTreeNode>) {
+    const stepOneOptions = {
+        placeHolder: localize(
+            "manageTemplates.quickPickOption.dataSetType",
+            "Select one template to edit, or multiple templates to delete."
+        ),
+        ignoreFocusOut: true,
+        canPickMany: true,
+    };
+    const stepOneChoices = [localize("manageTemplates.createTemplate", "+ Create new template")];
+
+    // Make a nice new mutable array for the DS properties
+    // tslint:disable-next-line: prefer-const
+    let newDSProperties = JSON.parse(JSON.stringify(globals.DATA_SET_PROPERTIES));
+
+    // Get any DS templates stored in settings.json
+    const customTemplates = datasetProvider.getTemplates().map((template) => JSON.parse(template));
+    if (customTemplates.length > 0) {
+        customTemplates.forEach((template) => {
+            let choiceLabel;
+            if (template["template-label"]) {
+                choiceLabel = template["template-label"];
+            } else {
+                choiceLabel = template.label;
+            }
+            stepOneChoices.push(choiceLabel);
+        });
+    }
+
+    // Get the selection: choice of template, templates, or Create New
+    const choice: string[] = [...(await vscode.window.showQuickPick(stepOneChoices, stepOneOptions))];
+    let choice2;
+    let selectedTemplate;
+    if (choice === null) {
+        globals.LOG.debug(localize("manageTemplates.noOptionSelected", "No option selected. Operation cancelled."));
+        vscode.window.showInformationMessage(localize("manageTemplates.operationCancelled", "Operation cancelled."));
+        return;
+    } else if (choice.length > 1) {
+        // Delete multiple selected templates
+        choice.forEach((template) => {
+            datasetProvider.removeTemplate(JSON.stringify(template));
+        });
+    } else if (choice[0] === "+ Create New Template") {
+        // Create a new template
+        choice2 = await handleUserSelection(newDSProperties, true);
+    } else {
+        // Edit the selected template
+        selectedTemplate = customTemplates.find(
+            (template) => template["template-label"] && template["template-label"] === choice[0]
+        );
+
+        newDSProperties.forEach((property) => {
+            if (selectedTemplate) {
+                Object.keys(selectedTemplate.properties).forEach((typeProperty) => {
+                    if (typeProperty === property.key) {
+                        property.value = selectedTemplate.properties[typeProperty].toString();
+                        property.placeHolder = selectedTemplate.properties[typeProperty];
+                    }
+                });
+            }
+        });
+        newDSProperties.templateLabel = selectedTemplate.templateLabel;
+
+        choice2 = await handleUserSelection(newDSProperties, true);
+    }
+
+    if (choice2 === null) {
+        globals.LOG.debug(localize("manageTemplates.noOptionSelected", "No option selected. Operation cancelled."));
+        vscode.window.showInformationMessage(localize("manageTemplates.operationCancelled", "Operation cancelled."));
+        return;
+    } else {
+        // Save the template
+        datasetProvider.addTemplate(newDSProperties);
+        globals.LOG.debug(localize("manageTemplates.savedTemplate", "Template saved."));
+        vscode.window.showInformationMessage(localize("manageTemplates.savedTemplate", "Template saved."));
+    }
+}
+
+async function handleUserSelection(newDSProperties, isTemplate?: boolean): Promise<string> {
     // Create the array of items in the quickpick list
     const qpItems = [];
     let validationFailed = false;
-    qpItems.push(new FilterItem(`+ Allocate Data Set`, null, true));
+    let confirmationText;
+    if (isTemplate) {
+        confirmationText = "> Save Template";
+    } else {
+        confirmationText = "+ Allocate Data Set";
+    }
+    qpItems.push(new FilterItem(confirmationText, null, true));
     newDSProperties.forEach((prop) => {
         if (prop.detail) {
             validationFailed = true;
@@ -739,7 +831,7 @@ async function handleUserSelection(newDSProperties, dsType): Promise<string> {
     quickpick.title = localize("createFileNoWebview.options.prompt", "Click on parameters to change them.");
     quickpick.items = [...qpItems];
     quickpick.matchOnDescription = false;
-    if (validationFailed) {
+    if (validationFailed && !isTemplate) {
         quickpick.placeholder = localize(
             "createFileNoWebview.options.prompt",
             "Parameters are invalid. Please fill out all required fields."
@@ -767,9 +859,9 @@ async function handleUserSelection(newDSProperties, dsType): Promise<string> {
     if (pattern) {
         // Parse pattern for selected attribute
         switch (pattern) {
-            case "+ Allocate Data Set":
-                if (validateDSAttributes(newDSProperties)) {
-                    return new Promise((resolve) => resolve(`+ Allocate Data Set`));
+            case confirmationText:
+                if (isTemplate || validateDSAttributes(newDSProperties)) {
+                    return new Promise((resolve) => resolve(confirmationText));
                 }
                 break;
             case "Show Attributes":
@@ -785,7 +877,7 @@ async function handleUserSelection(newDSProperties, dsType): Promise<string> {
                 });
                 break;
         }
-        return Promise.resolve(handleUserSelection(newDSProperties, dsType));
+        return Promise.resolve(handleUserSelection(newDSProperties));
     }
 }
 

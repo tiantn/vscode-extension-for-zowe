@@ -237,6 +237,7 @@ function initDatasetProvider(context: vscode.ExtensionContext, datasetProvider: 
     vscode.commands.registerCommand("zowe.uploadFromJsonTemplate", (node) =>
         dsActions.uploadFromJsonDialog(node, datasetProvider, true)
     );
+    vscode.commands.registerCommand("zowe.manageTemplates", (node) => dsActions.manageTemplates(node, datasetProvider));
     vscode.commands.registerCommand("zowe.deleteMember", (node) => dsActions.deleteDataset(node, datasetProvider));
     vscode.commands.registerCommand("zowe.editDataSet", (node) => dsActions.openPS(node, false, datasetProvider));
     vscode.commands.registerCommand("zowe.editMember", (node) => dsActions.openPS(node, false, datasetProvider));

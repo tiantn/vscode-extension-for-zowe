@@ -142,8 +142,8 @@ export class ZoweTreeProvider {
         }
     }
 
-    public async addTemplate(template: string) {
-        this.mHistory.addTemplate(template);
+    public async addTemplate(oldTemplateName, template: string) {
+        this.mHistory.addTemplate(oldTemplateName, template);
         this.refresh();
     }
 

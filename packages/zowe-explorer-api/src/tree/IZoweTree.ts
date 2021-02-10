@@ -176,9 +176,10 @@ export interface IZoweTree<T> extends vscode.TreeDataProvider<T> {
     getSearchHistory();
     /**
      * Adds a template to persisted settings.
-     * @param template: the node to be used as a template, in string format
+     * @param oldTemplateName: the template's old name
+     * @param template: the new template, in string format
      */
-    addTemplate(template: string);
+    addTemplate(oldTemplateName, template: string);
     /**
      * Retrieves templates from persisted settings.
      */

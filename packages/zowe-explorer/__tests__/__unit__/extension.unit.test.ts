@@ -192,6 +192,7 @@ async function createGlobalMocks() {
             "zowe.jobs.editSession",
             "zowe.issueTsoCmd",
             "zowe.issueMvsCmd",
+            "zowe.manageTemplates",
             "zowe.jobs.addFavorite",
             "zowe.jobs.removeFavorite",
             "zowe.jobs.saveSearch",

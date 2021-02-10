@@ -560,6 +560,10 @@
         "title": "%issueMvsCmd%"
       },
       {
+        "command": "zowe.manageTemplates",
+        "title": "%manageTemplates%"
+      },
+      {
         "command": "zowe.jobs.search",
         "title": "%jobs.search%",
         "icon": {
@@ -779,68 +783,73 @@
         },
         {
           "when": "view == zowe.explorer && viewItem =~ /^(?!.*_fav.*)session.*/",
-          "command": "zowe.pattern",
+          "command": "zowe.manageTemplates",
           "group": "1_create@0"
+        },
+        {
+          "when": "view == zowe.explorer && viewItem =~ /^(?!.*_fav.*)session.*/",
+          "command": "zowe.pattern",
+          "group": "1_create@1"
         },
         {
           "when": "view == zowe.explorer && viewItem =~ /^(pds|migr|ds|vsam).*/",
           "command": "zowe.showDSAttributes",
-          "group": "1_create@1"
+          "group": "1_create@2"
         },
         {
           "when": "view == zowe.explorer && viewItem =~ /^(member.*|ds.*)/",
           "command": "zowe.refreshNode",
-          "group": "1_create@2"
+          "group": "1_create@3"
         },
         {
           "when": "view == zowe.explorer && viewItem =~ /^(?!.*_fav.*)session.*/",
           "command": "zowe.createDataset",
-          "group": "1_create@2"
+          "group": "1_create@3"
         },
         {
           "when": "view == zowe.explorer && viewItem =~ /^(ds|pds).*/",
           "command": "zowe.allocateLike",
-          "group": "1_create@3"
-        },
-        {
-          "when": "view == zowe.explorer && viewItem =~ /^pds.*/",
-          "command": "zowe.createMember",
           "group": "1_create@4"
         },
         {
           "when": "view == zowe.explorer && viewItem =~ /^pds.*/",
-          "command": "zowe.uploadDialog",
+          "command": "zowe.createMember",
           "group": "1_create@5"
+        },
+        {
+          "when": "view == zowe.explorer && viewItem =~ /^pds.*/",
+          "command": "zowe.uploadDialog",
+          "group": "1_create@6"
         },
         {
           "when": "view == zowe.explorer && viewItem =~ /^member.*/",
           "command": "zowe.copyMember",
-          "group": "1_create@6"
-        },
-        {
-          "when": "view == zowe.explorer && viewItem =~ /^ds.*/",
-          "command": "zowe.copyDataSet",
-          "group": "1_create@6"
-        },
-        {
-          "when": "view == zowe.explorer && viewItem =~ /^pds.*/",
-          "command": "zowe.pasteMember",
           "group": "1_create@7"
         },
         {
           "when": "view == zowe.explorer && viewItem =~ /^ds.*/",
-          "command": "zowe.submitMember",
+          "command": "zowe.copyDataSet",
+          "group": "1_create@7"
+        },
+        {
+          "when": "view == zowe.explorer && viewItem =~ /^pds.*/",
+          "command": "zowe.pasteMember",
           "group": "1_create@8"
+        },
+        {
+          "when": "view == zowe.explorer && viewItem =~ /^ds.*/",
+          "command": "zowe.submitMember",
+          "group": "1_create@9"
         },
         {
           "when": "view == zowe.explorer && viewItem =~ /^member.*/",
           "command": "zowe.submitMember",
-          "group": "1_create@8"
+          "group": "1_create@9"
         },
         {
           "when": "view == zowe.explorer && viewItem =~ /^(?!.*_fav.*)session.*/",
           "command": "zowe.issueMvsCmd",
-          "group": "1_create@9"
+          "group": "1_create@10"
         },
         {
           "when": "view == zowe.explorer && viewItem =~ /^(?!.*_fav.*)session.*/",

@@ -57,12 +57,13 @@ export class PersistentFilters {
      * If the entry matches a previous entry it is removed from the list
      * at that position in the stack.
      *
-     * @param {string} criteria - a session name
+     * @param {string} oldTemplateName - the old template name
+     * @param {string} newTemplate - the new template to add
      */
-    public async addTemplate(newTemplate: string) {
+    public async addTemplate(oldTemplateName, newTemplate: string) {
         // Remove any entries that match
         this.mTemplates = this.mTemplates.filter((template) => {
-            return JSON.parse(template)["template-label"] !== JSON.parse(newTemplate)["template-label"];
+            return JSON.parse(template)["template-label"] !== oldTemplateName;
         });
         this.mTemplates.push(newTemplate);
 

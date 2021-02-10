@@ -73,6 +73,7 @@
   "Zowe-Environment": "Environment where the extension is running, default is VSCode",
   "Zowe-Automatic-Validation": "Allow automatic validation of profiles.",
   "issueMvsCmd": "Zowe: Issue MVS Command...",
+  "manageTemplates": "Manage Data Set Templates",
   "deleteProfile": "Delete Profile",
   "cmd.deleteProfile": "Zowe: Delete a Profile Permanently...",
   "rename": "Rename",

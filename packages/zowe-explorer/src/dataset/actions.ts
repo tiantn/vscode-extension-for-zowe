@@ -251,7 +251,7 @@ export async function uploadFromJsonDialog(
         // Create templates
         for (const template of nodeArray) {
             const templateAsString = JSON.stringify(template);
-            datasetProvider.addTemplate(templateAsString);
+            datasetProvider.addTemplate(null, templateAsString);
             globals.LOG.debug(localize("uploadFromJsonDialog.log.debug.templateAdded", "New template added."));
         }
 
@@ -595,19 +595,24 @@ export async function createFile(node: IZoweDatasetTreeNode, datasetProvider: IZ
             if (!selectedTemplate) {
                 selectedTemplate = customTemplates.find((template) => template["template-label"] === type);
             }
-            type = selectedTemplate ? selectedTemplate.type : type;
-
-            // Add the default/template attribute values to the editable list
-            typeEnum = getDataSetTypeAndOptions(type).typeEnum;
-            const cliDefaultsKey = globals.CreateDataSetTypeWithKeysEnum[typeEnum].replace("DATA_SET_", "");
-            propertiesFromDsType = zowe.CreateDefaults.DATA_SET[cliDefaultsKey];
-            newDSProperties.forEach((property) => {
-                Object.keys(propertiesFromDsType).forEach((typeProperty) => {
-                    if (typeProperty === property.key) {
-                        property.value = propertiesFromDsType[typeProperty].toString();
-                        property.placeHolder = propertiesFromDsType[typeProperty];
-                    }
+            if ((selectedTemplate && selectedTemplate.type) || !selectedTemplate) {
+                // Add the default attribute values to the editable list
+                type = selectedTemplate ? selectedTemplate.type : type;
+                typeEnum = getDataSetTypeAndOptions(type).typeEnum;
+                const cliDefaultsKey = globals.CreateDataSetTypeWithKeysEnum[typeEnum].replace("DATA_SET_", "");
+                propertiesFromDsType = zowe.CreateDefaults.DATA_SET[cliDefaultsKey];
+                newDSProperties.forEach((property) => {
+                    Object.keys(propertiesFromDsType).forEach((typeProperty) => {
+                        if (typeProperty === property.key) {
+                            property.value = propertiesFromDsType[typeProperty].toString();
+                            property.placeHolder = propertiesFromDsType[typeProperty];
+                        }
+                    });
                 });
+            }
+
+            // Add the template attribute values to the editable list
+            newDSProperties.forEach((property) => {
                 if (selectedTemplate) {
                     Object.keys(selectedTemplate.properties).forEach((typeProperty) => {
                         if (typeProperty === property.key) {
@@ -731,7 +736,7 @@ export async function manageTemplates(node: IZoweDatasetTreeNode, datasetProvide
         ignoreFocusOut: true,
         canPickMany: true,
     };
-    const stepOneChoices = [localize("manageTemplates.createTemplate", "+ Create new template")];
+    const stepOneChoices = [];
 
     // Make a nice new mutable array for the DS properties
     // tslint:disable-next-line: prefer-const
@@ -752,25 +757,34 @@ export async function manageTemplates(node: IZoweDatasetTreeNode, datasetProvide
     }
 
     // Get the selection: choice of template, templates, or Create New
-    const choice: string[] = [...(await vscode.window.showQuickPick(stepOneChoices, stepOneOptions))];
+    const choices: string[] = [...(await vscode.window.showQuickPick(stepOneChoices, stepOneOptions))];
     let choice2;
     let selectedTemplate;
-    if (choice === null) {
+    if (choices.length === 0) {
         globals.LOG.debug(localize("manageTemplates.noOptionSelected", "No option selected. Operation cancelled."));
         vscode.window.showInformationMessage(localize("manageTemplates.operationCancelled", "Operation cancelled."));
         return;
-    } else if (choice.length > 1) {
+    } else if (choices.length > 1) {
         // Delete multiple selected templates
-        choice.forEach((template) => {
-            datasetProvider.removeTemplate(JSON.stringify(template));
+        const templatesToDelete = [];
+        choices.forEach((choice) => {
+            customTemplates.every((template) => {
+                if (template["template-label"] && choice === template["template-label"]) {
+                    templatesToDelete.push(JSON.stringify(template));
+                    return false;
+                } else if (choice === template["template-label"]) {
+                    templatesToDelete.push(JSON.stringify(template));
+                    return false;
+                }
+                return true;
+            });
         });
-    } else if (choice[0] === "+ Create New Template") {
-        // Create a new template
-        choice2 = await handleUserSelection(newDSProperties, true);
+        templatesToDelete.forEach((template) => datasetProvider.removeTemplate(template));
     } else {
         // Edit the selected template
+        const oldTemplateName = choices[0];
         selectedTemplate = customTemplates.find(
-            (template) => template["template-label"] && template["template-label"] === choice[0]
+            (template) => template["template-label"] && template["template-label"] === choices[0]
         );
 
         newDSProperties.forEach((property) => {
@@ -783,20 +797,44 @@ export async function manageTemplates(node: IZoweDatasetTreeNode, datasetProvide
                 });
             }
         });
-        newDSProperties.templateLabel = selectedTemplate.templateLabel;
+        newDSProperties.forEach((prop) => {
+            if (prop.key === "dsName") {
+                prop.value = selectedTemplate.label;
+            }
+        });
+        newDSProperties.unshift({
+            key: `templateLabel`,
+            label: `Template Label`,
+            value: selectedTemplate["template-label"],
+            placeHolder: localize("manageTemplates.attribute.templateLabel", `Enter a label for the template`),
+        });
 
         choice2 = await handleUserSelection(newDSProperties, true);
-    }
 
-    if (choice2 === null) {
-        globals.LOG.debug(localize("manageTemplates.noOptionSelected", "No option selected. Operation cancelled."));
-        vscode.window.showInformationMessage(localize("manageTemplates.operationCancelled", "Operation cancelled."));
-        return;
-    } else {
-        // Save the template
-        datasetProvider.addTemplate(newDSProperties);
-        globals.LOG.debug(localize("manageTemplates.savedTemplate", "Template saved."));
-        vscode.window.showInformationMessage(localize("manageTemplates.savedTemplate", "Template saved."));
+        if (choice2 === null) {
+            globals.LOG.debug(localize("manageTemplates.noOptionSelected", "No option selected. Operation cancelled."));
+            vscode.window.showInformationMessage(
+                localize("manageTemplates.operationCancelled", "Operation cancelled.")
+            );
+            return;
+        } else {
+            // Save the template
+            const dsPropsFormatted = { label: null, "template-label": null, properties: {} };
+            newDSProperties.forEach((property) => {
+                if (property.value) {
+                    if (property.key === `dsName`) {
+                        dsPropsFormatted.label = property.value;
+                    } else if (property.key === `templateLabel`) {
+                        dsPropsFormatted["template-label"] = property.value;
+                    } else {
+                        dsPropsFormatted.properties[property.key] = property.value;
+                    }
+                }
+            });
+            datasetProvider.addTemplate(oldTemplateName, JSON.stringify(dsPropsFormatted));
+            globals.LOG.debug(localize("manageTemplates.savedTemplate", "Template saved."));
+            vscode.window.showInformationMessage(localize("manageTemplates.savedTemplate", "Template saved."));
+        }
     }
 }
 
@@ -806,7 +844,7 @@ async function handleUserSelection(newDSProperties, isTemplate?: boolean): Promi
     let validationFailed = false;
     let confirmationText;
     if (isTemplate) {
-        confirmationText = "> Save Template";
+        confirmationText = "+ Save Template";
     } else {
         confirmationText = "+ Allocate Data Set";
     }
@@ -831,7 +869,7 @@ async function handleUserSelection(newDSProperties, isTemplate?: boolean): Promi
     quickpick.title = localize("createFileNoWebview.options.prompt", "Click on parameters to change them.");
     quickpick.items = [...qpItems];
     quickpick.matchOnDescription = false;
-    if (validationFailed && !isTemplate) {
+    if (validationFailed) {
         quickpick.placeholder = localize(
             "createFileNoWebview.options.prompt",
             "Parameters are invalid. Please fill out all required fields."
@@ -860,7 +898,7 @@ async function handleUserSelection(newDSProperties, isTemplate?: boolean): Promi
         // Parse pattern for selected attribute
         switch (pattern) {
             case confirmationText:
-                if (isTemplate || validateDSAttributes(newDSProperties)) {
+                if (validateDSAttributes(newDSProperties, isTemplate)) {
                     return new Promise((resolve) => resolve(confirmationText));
                 }
                 break;
@@ -877,11 +915,11 @@ async function handleUserSelection(newDSProperties, isTemplate?: boolean): Promi
                 });
                 break;
         }
-        return Promise.resolve(handleUserSelection(newDSProperties));
+        return Promise.resolve(handleUserSelection(newDSProperties, isTemplate));
     }
 }
 
-function validateDSAttributes(attributesToValidate: any[]) {
+function validateDSAttributes(attributesToValidate: any[], isTemplate?: boolean) {
     let inputsValid = true;
     attributesToValidate.forEach((attribute) => {
         switch (attribute.key) {
@@ -898,7 +936,7 @@ function validateDSAttributes(attributesToValidate: any[]) {
             case "dirblk":
                 break;
             case "dsntype":
-                if (attribute.value === "") {
+                if (attribute.value === "" && !isTemplate) {
                     inputsValid = false;
                     attribute.detail = localize("validateDSAttributes.dsntype.empty", "Field required");
                 }
@@ -910,25 +948,25 @@ function validateDSAttributes(attributesToValidate: any[]) {
             case "dsorg":
                 break;
             case "primary":
-                if (attribute.value === "") {
+                if (attribute.value === "" && !isTemplate) {
                     inputsValid = false;
                     attribute.detail = localize("validateDSAttributes.primary.empty", "Field required");
                 }
                 break;
             case "recfm":
-                if (attribute.value === "") {
+                if (attribute.value === "" && !isTemplate) {
                     inputsValid = false;
                     attribute.detail = localize("validateDSAttributes.recfm.empty", "Field required");
                 }
                 break;
             case "lrecl":
-                if (attribute.value === "") {
+                if (attribute.value === "" && !isTemplate) {
                     inputsValid = false;
                     attribute.detail = localize("validateDSAttributes.lrecl.empty", "Field required");
                 }
                 break;
             case "secondary":
-                if (attribute.value === "") {
+                if (attribute.value === "" && !isTemplate) {
                     inputsValid = false;
                     attribute.detail = localize("validateDSAttributes.secondary.empty", "Field required");
                 }
@@ -940,6 +978,12 @@ function validateDSAttributes(attributesToValidate: any[]) {
             case "storclass":
                 break;
             case "volser":
+                break;
+            case "templateLabel":
+                if (attribute.value === "" && isTemplate) {
+                    inputsValid = false;
+                    attribute.detail = localize("validateDSAttributes.templateLabel.empty", "Field required");
+                }
                 break;
         }
     });

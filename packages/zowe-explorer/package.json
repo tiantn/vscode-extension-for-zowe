@@ -667,9 +667,14 @@
           "group": "1_create@4"
         },
         {
+          "when": "view == zowe.explorer && viewItem =~ /^(?!.*_fav.*)session.*/",
+          "command": "zowe.manageTemplates",
+          "group": "1_create@5"
+        },
+        {
           "when": "view == zowe.uss.explorer && viewItem =~ /^(?!.*_fav.*)ussSession.*/",
           "command": "zowe.issueMvsCmd",
-          "group": "1_create@5"
+          "group": "1_create@6"
         },
         {
           "when": "view == zowe.uss.explorer && viewItem =~ /^textFile.*/",
@@ -780,11 +785,6 @@
           "when": "view == zowe.explorer && viewItem =~ /^session.*_fav.*/",
           "command": "zowe.removeSavedSearch",
           "group": "inline"
-        },
-        {
-          "when": "view == zowe.explorer && viewItem =~ /^(?!.*_fav.*)session.*/",
-          "command": "zowe.manageTemplates",
-          "group": "1_create@0"
         },
         {
           "when": "view == zowe.explorer && viewItem =~ /^(?!.*_fav.*)session.*/",

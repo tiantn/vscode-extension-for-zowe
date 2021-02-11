@@ -60,11 +60,13 @@ export class PersistentFilters {
      * @param {string} oldTemplateName - the old template name
      * @param {string} newTemplate - the new template to add
      */
-    public async addTemplate(oldTemplateName, newTemplate: string) {
+    public async addTemplate(newTemplate: string, oldTemplateName?: string) {
         // Remove any entries that match
-        this.mTemplates = this.mTemplates.filter((template) => {
-            return JSON.parse(template)["template-label"] !== oldTemplateName;
-        });
+        if (oldTemplateName) {
+            this.mTemplates = this.mTemplates.filter((template) => {
+                return JSON.parse(template)["template-label"] !== oldTemplateName;
+            });
+        }
         this.mTemplates.push(newTemplate);
 
         // Use standard sorting
@@ -185,10 +187,10 @@ export class PersistentFilters {
     /* Remove functions, for removing one item from the persistent arrays
     /*********************************************************************************************************************************************/
 
-    public async removeTemplate(template: string) {
+    public async removeTemplate(templateToRemove: string) {
         // Remove any entries that match
-        this.mTemplates = this.mTemplates.filter((element) => {
-            return element.trim() !== template.trim();
+        this.mTemplates = this.mTemplates.filter((template) => {
+            return JSON.parse(template)["template-label"] !== templateToRemove;
         });
         this.updateTemplates();
     }

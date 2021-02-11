@@ -238,20 +238,24 @@ export async function uploadFromJsonDialog(
             }
         }
 
-        // Give unlabeled templates a standard label
         nodeArray.forEach((template) => {
+            // Make sure all templates have a template-label
             if (!template["template-label"]) {
-                template["template-label"] = localize(
-                    "uploadFromJsonDialog.template.standardLabel",
-                    "Unnamed Template"
-                );
+                template["template-label"] = template.label
+                    ? template.label
+                    : localize("uploadFromJsonDialog.template.standardLabel", "Unnamed Template");
+            }
+
+            // Make sure all templates have a properties object
+            if (!template.properties) {
+                template.properties = {};
             }
         });
 
         // Create templates
         for (const template of nodeArray) {
             const templateAsString = JSON.stringify(template);
-            datasetProvider.addTemplate(null, templateAsString);
+            datasetProvider.addTemplate(templateAsString);
             globals.LOG.debug(localize("uploadFromJsonDialog.log.debug.templateAdded", "New template added."));
         }
 
@@ -537,13 +541,7 @@ export async function createFile(node: IZoweDatasetTreeNode, datasetProvider: IZ
     const customTemplates = datasetProvider.getTemplates().map((template) => JSON.parse(template));
     if (customTemplates.length > 0) {
         customTemplates.forEach((template) => {
-            let choiceLabel;
-            if (template["template-label"]) {
-                choiceLabel = template["template-label"];
-            } else {
-                choiceLabel = template.label;
-            }
-            stepTwoChoices.push(choiceLabel);
+            stepTwoChoices.push(template["template-label"]);
         });
     }
 
@@ -589,14 +587,9 @@ export async function createFile(node: IZoweDatasetTreeNode, datasetProvider: IZ
             vscode.window.showInformationMessage(localize("createFile.operationCancelled", "Operation cancelled."));
             return;
         } else {
-            selectedTemplate = customTemplates.find(
-                (template) => template["template-label"] && template["template-label"] === type
-            );
-            if (!selectedTemplate) {
-                selectedTemplate = customTemplates.find((template) => template["template-label"] === type);
-            }
+            selectedTemplate = customTemplates.find((template) => template["template-label"] === type);
             if ((selectedTemplate && selectedTemplate.type) || !selectedTemplate) {
-                // Add the default attribute values to the editable list
+                // Add the default DS type attributes to the editable list
                 type = selectedTemplate ? selectedTemplate.type : type;
                 typeEnum = getDataSetTypeAndOptions(type).typeEnum;
                 const cliDefaultsKey = globals.CreateDataSetTypeWithKeysEnum[typeEnum].replace("DATA_SET_", "");
@@ -611,7 +604,7 @@ export async function createFile(node: IZoweDatasetTreeNode, datasetProvider: IZ
                 });
             }
 
-            // Add the template attribute values to the editable list
+            // Add the template attributes to the editable list
             newDSProperties.forEach((property) => {
                 if (selectedTemplate) {
                     Object.keys(selectedTemplate.properties).forEach((typeProperty) => {
@@ -627,7 +620,6 @@ export async function createFile(node: IZoweDatasetTreeNode, datasetProvider: IZ
         // 3rd step: Ask if we allocate, or show DS attributes
         const choice = await vscode.window.showQuickPick(stepThreeChoices, stepThreeOptions);
         if (choice == null) {
-            globals.LOG.debug(localize("createFile.noOptionSelected", "No option selected. Operation cancelled."));
             vscode.window.showInformationMessage(localize("createFile.operationCancelled", "Operation cancelled."));
             return;
         } else {
@@ -641,12 +633,16 @@ export async function createFile(node: IZoweDatasetTreeNode, datasetProvider: IZ
                 // 4th step (optional): Show data set attributes
                 const choice2 = await handleUserSelection(newDSProperties);
                 if (choice2 == null) {
-                    globals.LOG.debug(
-                        localize("createFile.noOptionSelected", "No option selected. Operation cancelled.")
-                    );
                     vscode.window.showInformationMessage(
                         localize("createFile.operationCancelled", "Operation cancelled.")
                     );
+                    return;
+                } else if (choice2 === "> Save as Template") {
+                    // Save the template
+                    const dsPropsFormatted = formatDSProperties(newDSProperties, true);
+                    datasetProvider.addTemplate(JSON.stringify(dsPropsFormatted));
+
+                    vscode.window.showInformationMessage(localize("manageTemplates.savedTemplate", "Template saved."));
                     return;
                 } else {
                     globals.LOG.debug(
@@ -659,21 +655,10 @@ export async function createFile(node: IZoweDatasetTreeNode, datasetProvider: IZ
             }
         }
 
-        // Format properties for use by API
-        const dsPropsForAPI = {};
-        newDSProperties.forEach((property) => {
-            if (property.value) {
-                if (property.key === `dsName`) {
-                    dsName = property.value;
-                } else {
-                    if (typeof propertiesFromDsType[property.key] === "number") {
-                        dsPropsForAPI[property.key] = Number(property.value);
-                    } else {
-                        dsPropsForAPI[property.key] = property.value;
-                    }
-                }
-            }
-        });
+        // Format parameters for use by API
+        const dsPropsForAPI = formatDSProperties(newDSProperties);
+        dsName = dsPropsForAPI.dsName;
+        delete dsPropsForAPI.dsName;
 
         try {
             // Allocate the data set
@@ -746,13 +731,7 @@ export async function manageTemplates(node: IZoweDatasetTreeNode, datasetProvide
     const customTemplates = datasetProvider.getTemplates().map((template) => JSON.parse(template));
     if (customTemplates.length > 0) {
         customTemplates.forEach((template) => {
-            let choiceLabel;
-            if (template["template-label"]) {
-                choiceLabel = template["template-label"];
-            } else {
-                choiceLabel = template.label;
-            }
-            stepOneChoices.push(choiceLabel);
+            stepOneChoices.push(template["template-label"]);
         });
     }
 
@@ -766,40 +745,21 @@ export async function manageTemplates(node: IZoweDatasetTreeNode, datasetProvide
         return;
     } else if (choices.length > 1) {
         // Delete multiple selected templates
-        const templatesToDelete = [];
-        choices.forEach((choice) => {
-            customTemplates.every((template) => {
-                if (template["template-label"] && choice === template["template-label"]) {
-                    templatesToDelete.push(JSON.stringify(template));
-                    return false;
-                } else if (choice === template["template-label"]) {
-                    templatesToDelete.push(JSON.stringify(template));
-                    return false;
-                }
-                return true;
-            });
-        });
-        templatesToDelete.forEach((template) => datasetProvider.removeTemplate(template));
+        choices.forEach((template) => datasetProvider.removeTemplate(template));
     } else {
         // Edit the selected template
         const oldTemplateName = choices[0];
-        selectedTemplate = customTemplates.find(
-            (template) => template["template-label"] && template["template-label"] === choices[0]
-        );
+        selectedTemplate = customTemplates.find((template) => template["template-label"] === oldTemplateName);
 
-        newDSProperties.forEach((property) => {
-            if (selectedTemplate) {
-                Object.keys(selectedTemplate.properties).forEach((typeProperty) => {
-                    if (typeProperty === property.key) {
-                        property.value = selectedTemplate.properties[typeProperty].toString();
-                        property.placeHolder = selectedTemplate.properties[typeProperty];
-                    }
-                });
-            }
-        });
-        newDSProperties.forEach((prop) => {
-            if (prop.key === "dsName") {
-                prop.value = selectedTemplate.label;
+        newDSProperties.forEach((defaultProp) => {
+            Object.keys(selectedTemplate.properties).forEach((propInSettings) => {
+                if (propInSettings === defaultProp.key) {
+                    defaultProp.value = selectedTemplate.properties[propInSettings].toString();
+                    defaultProp.placeHolder = selectedTemplate.properties[propInSettings];
+                }
+            });
+            if (defaultProp.key === "dsName") {
+                defaultProp.value = selectedTemplate.label;
             }
         });
         newDSProperties.unshift({
@@ -819,36 +779,57 @@ export async function manageTemplates(node: IZoweDatasetTreeNode, datasetProvide
             return;
         } else {
             // Save the template
-            const dsPropsFormatted = { label: null, "template-label": null, properties: {} };
-            newDSProperties.forEach((property) => {
-                if (property.value) {
-                    if (property.key === `dsName`) {
-                        dsPropsFormatted.label = property.value;
-                    } else if (property.key === `templateLabel`) {
-                        dsPropsFormatted["template-label"] = property.value;
-                    } else {
-                        dsPropsFormatted.properties[property.key] = property.value;
-                    }
-                }
-            });
-            datasetProvider.addTemplate(oldTemplateName, JSON.stringify(dsPropsFormatted));
-            globals.LOG.debug(localize("manageTemplates.savedTemplate", "Template saved."));
+            const dsPropsFormatted = formatDSProperties(newDSProperties, true);
+            datasetProvider.addTemplate(JSON.stringify(dsPropsFormatted), oldTemplateName);
+
             vscode.window.showInformationMessage(localize("manageTemplates.savedTemplate", "Template saved."));
         }
     }
+}
+
+function formatDSProperties(dsProperties, isTemplate?: boolean) {
+    let dsPropsFormatted;
+    if (isTemplate) {
+        // Format properties for storage as a template in settings.json
+        dsPropsFormatted = { label: null, "template-label": null, properties: {} };
+        dsProperties.forEach((property) => {
+            if (property.value) {
+                if (property.key === `dsName`) {
+                    dsPropsFormatted.label = property.value;
+                } else if (property.key === `templateLabel`) {
+                    dsPropsFormatted["template-label"] = property.value;
+                } else {
+                    dsPropsFormatted.properties[property.key] = property.value;
+                }
+            }
+        });
+        if (!dsPropsFormatted["template-label"]) {
+            dsPropsFormatted["template-label"] = dsPropsFormatted.label;
+        }
+    } else {
+        // Format properties for passing to CLI to allocate a data set
+        dsPropsFormatted = {};
+        dsProperties.forEach((property) => {
+            if (property.value) {
+                if (isNaN(Number(property.value))) {
+                    dsPropsFormatted[property.key] = property.value;
+                } else {
+                    dsPropsFormatted[property.key] = Number(property.value);
+                }
+            }
+        });
+    }
+    return dsPropsFormatted;
 }
 
 async function handleUserSelection(newDSProperties, isTemplate?: boolean): Promise<string> {
     // Create the array of items in the quickpick list
     const qpItems = [];
     let validationFailed = false;
-    let confirmationText;
-    if (isTemplate) {
-        confirmationText = "+ Save Template";
-    } else {
-        confirmationText = "+ Allocate Data Set";
+    if (!isTemplate) {
+        qpItems.push(new FilterItem(`+ Allocate Data Set`, null, true));
     }
-    qpItems.push(new FilterItem(confirmationText, null, true));
+    qpItems.push(new FilterItem(`> Save as Template`, null, true));
     newDSProperties.forEach((prop) => {
         if (prop.detail) {
             validationFailed = true;
@@ -897,9 +878,14 @@ async function handleUserSelection(newDSProperties, isTemplate?: boolean): Promi
     if (pattern) {
         // Parse pattern for selected attribute
         switch (pattern) {
-            case confirmationText:
-                if (validateDSAttributes(newDSProperties, isTemplate)) {
-                    return new Promise((resolve) => resolve(confirmationText));
+            case "+ Allocate Data Set":
+                if (validateDSAttributes(newDSProperties)) {
+                    return new Promise((resolve) => resolve("+ Allocate Data Set"));
+                }
+                break;
+            case "> Save as Template":
+                if (validateDSAttributes(newDSProperties, true)) {
+                    return new Promise((resolve) => resolve(`> Save as Template`));
                 }
                 break;
             case "Show Attributes":

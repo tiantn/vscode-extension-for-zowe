@@ -179,7 +179,7 @@ export interface IZoweTree<T> extends vscode.TreeDataProvider<T> {
      * @param oldTemplateName: the template's old name
      * @param template: the new template, in string format
      */
-    addTemplate(oldTemplateName, template: string);
+    addTemplate(template: string, oldTemplateName?: string);
     /**
      * Retrieves templates from persisted settings.
      */

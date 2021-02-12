@@ -64,7 +64,7 @@ export class PersistentFilters {
         // Remove any entries that match
         if (oldTemplateName) {
             this.mTemplates = this.mTemplates.filter((template) => {
-                return JSON.parse(template)["template-label"] !== oldTemplateName;
+                return JSON.parse(template)["template-name"] !== oldTemplateName;
             });
         }
         this.mTemplates.push(newTemplate);
@@ -190,7 +190,7 @@ export class PersistentFilters {
     public async removeTemplate(templateToRemove: string) {
         // Remove any entries that match
         this.mTemplates = this.mTemplates.filter((template) => {
-            return JSON.parse(template)["template-label"] !== templateToRemove;
+            return JSON.parse(template)["template-name"] !== templateToRemove;
         });
         this.updateTemplates();
     }

@@ -229,9 +229,9 @@ export async function uploadFromJsonDialog(
         // Check for duplicate template labels
         for (const [index, template] of nodeArray.entries()) {
             for (let index2 = index; index2 < nodeArray.length; ++index2) {
-                if (template["template-label"] === nodeArray[index2]["template-label"] && index !== index2) {
+                if (template["template-name"] === nodeArray[index2]["template-name"] && index !== index2) {
                     vscode.window.showErrorMessage(
-                        localize("selectFile.templateLabel.error", "Error: The file contains duplicate template names.")
+                        localize("selectFile.templateName.error", "Error: The file contains duplicate template names.")
                     );
                     return;
                 }
@@ -239,9 +239,9 @@ export async function uploadFromJsonDialog(
         }
 
         nodeArray.forEach((template) => {
-            // Make sure all templates have a template-label
-            if (!template["template-label"]) {
-                template["template-label"] = template.label
+            // Make sure all templates have a template-name
+            if (!template["template-name"]) {
+                template["template-name"] = template.label
                     ? template.label
                     : localize("uploadFromJsonDialog.template.standardLabel", "Unnamed Template");
             }
@@ -513,16 +513,21 @@ export async function createFile(node: IZoweDatasetTreeNode, datasetProvider: IZ
     let dsName: string;
     let propertiesFromDsType: any;
     let typeEnum: zowe.CreateDataSetTypeEnum;
-    const stepTwoOptions = {
+    const stepOneOptions = {
         placeHolder: localize("createFile.quickPickOption.dataSetType", "Type of Data Set to be Created"),
         ignoreFocusOut: true,
         canPickMany: false,
+    };
+    const stepTwoOptions = {
+        placeHolder: localize("dataset.name", "Name of Data Set"),
+        value: null,
+        ignoreFocusOut: true,
     };
     const stepThreeOptions: vscode.QuickPickOptions = {
         ignoreFocusOut: true,
         canPickMany: false,
     };
-    const stepTwoChoices = [
+    const stepOneChoices = [
         localize("createFile.dataSetBinary", "Data Set Binary"),
         localize("createFile.dataSetC", "Data Set C"),
         localize("createFile.dataSetClassic", "Data Set Classic"),
@@ -541,7 +546,7 @@ export async function createFile(node: IZoweDatasetTreeNode, datasetProvider: IZ
     const customTemplates = datasetProvider.getTemplates().map((template) => JSON.parse(template));
     if (customTemplates.length > 0) {
         customTemplates.forEach((template) => {
-            stepTwoChoices.push(template["template-label"]);
+            stepOneChoices.push(template["template-name"]);
         });
     }
 
@@ -550,11 +555,55 @@ export async function createFile(node: IZoweDatasetTreeNode, datasetProvider: IZ
         Profiles.getInstance().validProfile === ValidProfileEnum.VALID ||
         Profiles.getInstance().validProfile === ValidProfileEnum.UNVERIFIED
     ) {
-        // 1st step: Get data set name
-        dsName = await vscode.window.showInputBox({
-            placeHolder: localize("dataset.name", "Name of Data Set"),
-            ignoreFocusOut: true,
-        });
+        // 1st step: Select data set type or template
+        let type = await vscode.window.showQuickPick(stepOneChoices, stepOneOptions);
+        let selectedTemplate = null;
+        if (type == null) {
+            globals.LOG.debug(
+                localize(
+                    "createFile.log.debug.noValidTypeSelected",
+                    "No valid data set type selected. Operation cancelled."
+                )
+            );
+            vscode.window.showInformationMessage(localize("createFile.operationCancelled", "Operation cancelled."));
+            return;
+        } else {
+            selectedTemplate = customTemplates.find((template) => template["template-name"] === type);
+            if ((selectedTemplate && selectedTemplate.type) || !selectedTemplate) {
+                // Add the default DS type attributes to the editable list
+                type = selectedTemplate ? selectedTemplate.type : type;
+                typeEnum = getDataSetTypeAndOptions(type).typeEnum;
+                const cliDefaultsKey = globals.CreateDataSetTypeWithKeysEnum[typeEnum].replace("DATA_SET_", "");
+                propertiesFromDsType = zowe.CreateDefaults.DATA_SET[cliDefaultsKey];
+                newDSProperties.forEach((defaultProperty) => {
+                    Object.keys(propertiesFromDsType).forEach((typeProperty) => {
+                        if (typeProperty === defaultProperty.key) {
+                            defaultProperty.value = propertiesFromDsType[typeProperty].toString();
+                            defaultProperty.placeHolder = propertiesFromDsType[typeProperty];
+                        }
+                    });
+                });
+            }
+
+            // Add the template attributes to the editable list
+            newDSProperties.forEach((defaultProperty) => {
+                if (selectedTemplate) {
+                    if (defaultProperty.key === "dsName") {
+                        defaultProperty.value = selectedTemplate.label;
+                        stepTwoOptions.value = selectedTemplate.label;
+                    }
+                    Object.keys(selectedTemplate.properties).forEach((templateProperty) => {
+                        if (templateProperty === defaultProperty.key) {
+                            defaultProperty.value = selectedTemplate.properties[templateProperty].toString();
+                            defaultProperty.placeHolder = selectedTemplate.properties[templateProperty];
+                        }
+                    });
+                }
+            });
+        }
+
+        // 2nd step: Get data set name
+        dsName = await vscode.window.showInputBox(stepTwoOptions);
         if (dsName) {
             dsName = dsName.trim().toUpperCase();
             newDSProperties.forEach((property) => {
@@ -572,49 +621,6 @@ export async function createFile(node: IZoweDatasetTreeNode, datasetProvider: IZ
             );
             vscode.window.showInformationMessage(localize("createFile.operationCancelled", "Operation cancelled."));
             return;
-        }
-
-        // 2nd step: Select data set type or template
-        let type = await vscode.window.showQuickPick(stepTwoChoices, stepTwoOptions);
-        let selectedTemplate = null;
-        if (type == null) {
-            globals.LOG.debug(
-                localize(
-                    "createFile.log.debug.noValidTypeSelected",
-                    "No valid data set type selected. Operation cancelled."
-                )
-            );
-            vscode.window.showInformationMessage(localize("createFile.operationCancelled", "Operation cancelled."));
-            return;
-        } else {
-            selectedTemplate = customTemplates.find((template) => template["template-label"] === type);
-            if ((selectedTemplate && selectedTemplate.type) || !selectedTemplate) {
-                // Add the default DS type attributes to the editable list
-                type = selectedTemplate ? selectedTemplate.type : type;
-                typeEnum = getDataSetTypeAndOptions(type).typeEnum;
-                const cliDefaultsKey = globals.CreateDataSetTypeWithKeysEnum[typeEnum].replace("DATA_SET_", "");
-                propertiesFromDsType = zowe.CreateDefaults.DATA_SET[cliDefaultsKey];
-                newDSProperties.forEach((property) => {
-                    Object.keys(propertiesFromDsType).forEach((typeProperty) => {
-                        if (typeProperty === property.key) {
-                            property.value = propertiesFromDsType[typeProperty].toString();
-                            property.placeHolder = propertiesFromDsType[typeProperty];
-                        }
-                    });
-                });
-            }
-
-            // Add the template attributes to the editable list
-            newDSProperties.forEach((property) => {
-                if (selectedTemplate) {
-                    Object.keys(selectedTemplate.properties).forEach((typeProperty) => {
-                        if (typeProperty === property.key) {
-                            property.value = selectedTemplate.properties[typeProperty].toString();
-                            property.placeHolder = selectedTemplate.properties[typeProperty];
-                        }
-                    });
-                }
-            });
         }
 
         // 3rd step: Ask if we allocate, or show DS attributes
@@ -638,6 +644,32 @@ export async function createFile(node: IZoweDatasetTreeNode, datasetProvider: IZ
                     );
                     return;
                 } else if (choice2 === "> Save as Template") {
+                    // Get template name
+                    const templateName = await vscode.window.showInputBox({
+                        placeHolder: localize("createFile.saveAsTemplate.name", "Enter a name for the template."),
+                    });
+                    if (templateName) {
+                        newDSProperties.unshift({
+                            key: `templateName`,
+                            label: `Template Name`,
+                            value: templateName,
+                            placeHolder: localize(
+                                "manageTemplates.attribute.templateName",
+                                `Enter a name for the template`
+                            ),
+                        });
+                    } else {
+                        globals.LOG.debug(
+                            localize(
+                                "createFile.log.debug.noValidNameEntered",
+                                "No valid template name entered. Operation cancelled"
+                            )
+                        );
+                        vscode.window.showInformationMessage(
+                            localize("createFile.operationCancelled", "Operation cancelled.")
+                        );
+                        return;
+                    }
                     // Save the template
                     const dsPropsFormatted = formatDSProperties(newDSProperties, true);
                     datasetProvider.addTemplate(JSON.stringify(dsPropsFormatted));
@@ -731,7 +763,7 @@ export async function manageTemplates(node: IZoweDatasetTreeNode, datasetProvide
     const customTemplates = datasetProvider.getTemplates().map((template) => JSON.parse(template));
     if (customTemplates.length > 0) {
         customTemplates.forEach((template) => {
-            stepOneChoices.push(template["template-label"]);
+            stepOneChoices.push(template["template-name"]);
         });
     }
 
@@ -749,7 +781,7 @@ export async function manageTemplates(node: IZoweDatasetTreeNode, datasetProvide
     } else {
         // Edit the selected template
         const oldTemplateName = choices[0];
-        selectedTemplate = customTemplates.find((template) => template["template-label"] === oldTemplateName);
+        selectedTemplate = customTemplates.find((template) => template["template-name"] === oldTemplateName);
 
         newDSProperties.forEach((defaultProp) => {
             Object.keys(selectedTemplate.properties).forEach((propInSettings) => {
@@ -763,10 +795,10 @@ export async function manageTemplates(node: IZoweDatasetTreeNode, datasetProvide
             }
         });
         newDSProperties.unshift({
-            key: `templateLabel`,
-            label: `Template Label`,
-            value: selectedTemplate["template-label"],
-            placeHolder: localize("manageTemplates.attribute.templateLabel", `Enter a label for the template`),
+            key: `templateName`,
+            label: `Template Name`,
+            value: selectedTemplate["template-name"],
+            placeHolder: localize("manageTemplates.attribute.templateName", `Enter a name for the template`),
         });
 
         choice2 = await handleUserSelection(newDSProperties, true);
@@ -791,20 +823,20 @@ function formatDSProperties(dsProperties, isTemplate?: boolean) {
     let dsPropsFormatted;
     if (isTemplate) {
         // Format properties for storage as a template in settings.json
-        dsPropsFormatted = { label: null, "template-label": null, properties: {} };
+        dsPropsFormatted = { label: null, "template-name": null, properties: {} };
         dsProperties.forEach((property) => {
             if (property.value) {
                 if (property.key === `dsName`) {
                     dsPropsFormatted.label = property.value;
-                } else if (property.key === `templateLabel`) {
-                    dsPropsFormatted["template-label"] = property.value;
+                } else if (property.key === `templateName`) {
+                    dsPropsFormatted["template-name"] = property.value;
                 } else {
                     dsPropsFormatted.properties[property.key] = property.value;
                 }
             }
         });
-        if (!dsPropsFormatted["template-label"]) {
-            dsPropsFormatted["template-label"] = dsPropsFormatted.label;
+        if (!dsPropsFormatted["template-name"]) {
+            dsPropsFormatted["template-name"] = dsPropsFormatted.label;
         }
     } else {
         // Format properties for passing to CLI to allocate a data set
@@ -965,10 +997,10 @@ function validateDSAttributes(attributesToValidate: any[], isTemplate?: boolean)
                 break;
             case "volser":
                 break;
-            case "templateLabel":
+            case "templateName":
                 if (attribute.value === "" && isTemplate) {
                     inputsValid = false;
-                    attribute.detail = localize("validateDSAttributes.templateLabel.empty", "Field required");
+                    attribute.detail = localize("validateDSAttributes.templateName.empty", "Field required");
                 }
                 break;
         }

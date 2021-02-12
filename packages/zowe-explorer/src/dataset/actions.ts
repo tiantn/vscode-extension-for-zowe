@@ -509,16 +509,21 @@ export async function createFile(node: IZoweDatasetTreeNode, datasetProvider: IZ
     let dsName: string;
     let propertiesFromDsType: any;
     let typeEnum: zowe.CreateDataSetTypeEnum;
-    const stepTwoOptions = {
+    const stepOneOptions = {
         placeHolder: localize("createFile.quickPickOption.dataSetType", "Type of Data Set to be Created"),
         ignoreFocusOut: true,
         canPickMany: false,
+    };
+    const stepTwoOptions = {
+        placeHolder: localize("dataset.name", "Name of Data Set"),
+        value: null,
+        ignoreFocusOut: true,
     };
     const stepThreeOptions: vscode.QuickPickOptions = {
         ignoreFocusOut: true,
         canPickMany: false,
     };
-    const stepTwoChoices = [
+    const stepOneChoices = [
         localize("createFile.dataSetBinary", "Data Set Binary"),
         localize("createFile.dataSetC", "Data Set C"),
         localize("createFile.dataSetClassic", "Data Set Classic"),
@@ -543,7 +548,7 @@ export async function createFile(node: IZoweDatasetTreeNode, datasetProvider: IZ
             } else {
                 choiceLabel = template.label;
             }
-            stepTwoChoices.push(choiceLabel);
+            stepOneChoices.push(choiceLabel);
         });
     }
 
@@ -552,11 +557,55 @@ export async function createFile(node: IZoweDatasetTreeNode, datasetProvider: IZ
         Profiles.getInstance().validProfile === ValidProfileEnum.VALID ||
         Profiles.getInstance().validProfile === ValidProfileEnum.UNVERIFIED
     ) {
-        // 1st step: Get data set name
-        dsName = await vscode.window.showInputBox({
-            placeHolder: localize("dataset.name", "Name of Data Set"),
-            ignoreFocusOut: true,
-        });
+        // 1st step: Select data set type or template
+        let type = await vscode.window.showQuickPick(stepOneChoices, stepOneOptions);
+        let selectedTemplate = null;
+        if (type == null) {
+            globals.LOG.debug(
+                localize(
+                    "createFile.log.debug.noValidTypeSelected",
+                    "No valid data set type selected. Operation cancelled."
+                )
+            );
+            vscode.window.showInformationMessage(localize("createFile.operationCancelled", "Operation cancelled."));
+            return;
+        } else {
+            selectedTemplate = customTemplates.find((template) => template["template-label"] === type);
+            if ((selectedTemplate && selectedTemplate.type) || !selectedTemplate) {
+                // Add the default DS type attributes to the editable list
+                type = selectedTemplate ? selectedTemplate.type : type;
+                typeEnum = getDataSetTypeAndOptions(type).typeEnum;
+                const cliDefaultsKey = globals.CreateDataSetTypeWithKeysEnum[typeEnum].replace("DATA_SET_", "");
+                propertiesFromDsType = zowe.CreateDefaults.DATA_SET[cliDefaultsKey];
+                newDSProperties.forEach((defaultProperty) => {
+                    Object.keys(propertiesFromDsType).forEach((typeProperty) => {
+                        if (typeProperty === defaultProperty.key) {
+                            defaultProperty.value = propertiesFromDsType[typeProperty].toString();
+                            defaultProperty.placeHolder = propertiesFromDsType[typeProperty];
+                        }
+                    });
+                });
+            }
+
+            // Add the template attributes to the editable list
+            newDSProperties.forEach((defaultProperty) => {
+                if (selectedTemplate) {
+                    if (defaultProperty.key === "dsName") {
+                        defaultProperty.value = selectedTemplate.label;
+                        stepTwoOptions.value = selectedTemplate.label;
+                    }
+                    Object.keys(selectedTemplate.properties).forEach((templateProperty) => {
+                        if (templateProperty === defaultProperty.key) {
+                            defaultProperty.value = selectedTemplate.properties[templateProperty].toString();
+                            defaultProperty.placeHolder = selectedTemplate.properties[templateProperty];
+                        }
+                    });
+                }
+            });
+        }
+
+        // 2nd step: Get data set name
+        dsName = await vscode.window.showInputBox(stepTwoOptions);
         if (dsName) {
             dsName = dsName.trim().toUpperCase();
             newDSProperties.forEach((property) => {
@@ -574,54 +623,6 @@ export async function createFile(node: IZoweDatasetTreeNode, datasetProvider: IZ
             );
             vscode.window.showInformationMessage(localize("createFile.operationCancelled", "Operation cancelled."));
             return;
-        }
-
-        // 2nd step: Select data set type or template
-        let type = await vscode.window.showQuickPick(stepTwoChoices, stepTwoOptions);
-        let selectedTemplate = null;
-        if (type == null) {
-            globals.LOG.debug(
-                localize(
-                    "createFile.log.debug.noValidTypeSelected",
-                    "No valid data set type selected. Operation cancelled."
-                )
-            );
-            vscode.window.showInformationMessage(localize("createFile.operationCancelled", "Operation cancelled."));
-            return;
-        } else {
-            selectedTemplate = customTemplates.find(
-                (template) => template["template-label"] && template["template-label"] === type
-            );
-            if (!selectedTemplate) {
-                selectedTemplate = customTemplates.find((template) => template["template-label"] === type);
-            }
-            if ((selectedTemplate && selectedTemplate.type) || !selectedTemplate) {
-                // Add the default attribute values to the editable list
-                type = selectedTemplate ? selectedTemplate.type : type;
-                typeEnum = getDataSetTypeAndOptions(type).typeEnum;
-                const cliDefaultsKey = globals.CreateDataSetTypeWithKeysEnum[typeEnum].replace("DATA_SET_", "");
-                propertiesFromDsType = zowe.CreateDefaults.DATA_SET[cliDefaultsKey];
-                newDSProperties.forEach((property) => {
-                    Object.keys(propertiesFromDsType).forEach((typeProperty) => {
-                        if (typeProperty === property.key) {
-                            property.value = propertiesFromDsType[typeProperty].toString();
-                            property.placeHolder = propertiesFromDsType[typeProperty];
-                        }
-                    });
-                });
-            }
-
-            // Add the template attribute values to the editable list
-            newDSProperties.forEach((property) => {
-                if (selectedTemplate) {
-                    Object.keys(selectedTemplate.properties).forEach((typeProperty) => {
-                        if (typeProperty === property.key) {
-                            property.value = selectedTemplate.properties[typeProperty].toString();
-                            property.placeHolder = selectedTemplate.properties[typeProperty];
-                        }
-                    });
-                }
-            });
         }
 
         // 3rd step: Ask if we allocate, or show DS attributes

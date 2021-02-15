@@ -653,10 +653,7 @@ export async function createFile(node: IZoweDatasetTreeNode, datasetProvider: IZ
                             key: `templateName`,
                             label: `Template Name`,
                             value: templateName,
-                            placeHolder: localize(
-                                "manageTemplates.attribute.templateName",
-                                `Enter a name for the template`
-                            ),
+                            placeHolder: localize("createFile.attribute.templateName", `Enter a name for the template`),
                         });
                     } else {
                         globals.LOG.debug(
@@ -674,7 +671,7 @@ export async function createFile(node: IZoweDatasetTreeNode, datasetProvider: IZ
                     const dsPropsFormatted = formatDSProperties(newDSProperties, true);
                     datasetProvider.addTemplate(JSON.stringify(dsPropsFormatted));
 
-                    vscode.window.showInformationMessage(localize("manageTemplates.savedTemplate", "Template saved."));
+                    vscode.window.showInformationMessage(localize("createFile.savedTemplate", "Template saved."));
                     return;
                 } else {
                     globals.LOG.debug(
@@ -735,15 +732,122 @@ export async function createFile(node: IZoweDatasetTreeNode, datasetProvider: IZ
     }
 }
 
-/**
- * Creates a new file and uploads to the server
- * !!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!
- * TODO: Consider changing configuration to allow "custom" data set specifications
- * !!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!
- * @export
- * @param {IZoweDatasetTreeNode} node - Desired Zowe session
- * @param {DatasetTree} datasetProvider - the tree which contains the nodes
- */
+export async function createTemplate(node: IZoweDatasetTreeNode, datasetProvider: IZoweTree<IZoweDatasetTreeNode>) {
+    let templateName: string;
+    let propertiesFromDsType: any;
+    let typeEnum: zowe.CreateDataSetTypeEnum;
+    const stepOneOptions = {
+        placeHolder: localize("createTemplate.template.name", "Name of template"),
+        value: null,
+        ignoreFocusOut: true,
+    };
+    const stepTwoOptions = {
+        placeHolder: localize("createTemplate.quickPickOption.dataSetType", "Select Data Set type"),
+        ignoreFocusOut: true,
+        canPickMany: false,
+    };
+    const stepTwoChoices = [
+        localize("createTemplate.blankTemplate", "- Blank Template"),
+        localize("createTemplate.dataSetBinary", "Data Set Binary"),
+        localize("createTemplate.dataSetC", "Data Set C"),
+        localize("createTemplate.dataSetClassic", "Data Set Classic"),
+        localize("createTemplate.dataSetPartitioned", "Data Set Partitioned"),
+        localize("createTemplate.dataSetSequential", "Data Set Sequential"),
+    ];
+    // Make a nice new mutable array for the DS properties
+    // tslint:disable-next-line: prefer-const
+    let newDSProperties = JSON.parse(JSON.stringify(globals.DATA_SET_PROPERTIES));
+
+    // Get any DS templates stored in settings.json
+    const customTemplates = datasetProvider.getTemplates().map((template) => JSON.parse(template));
+    if (customTemplates.length > 0) {
+        customTemplates.forEach((template) => {
+            stepTwoChoices.push(template["template-name"]);
+        });
+    }
+
+    // 1st step: Get template name
+    templateName = await vscode.window.showInputBox(stepOneOptions);
+
+    if (templateName) {
+        newDSProperties.unshift({
+            key: `templateName`,
+            label: `Template Name`,
+            value: templateName,
+            placeHolder: localize("manageTemplates.attribute.templateName", `Enter a name for the template`),
+        });
+    } else {
+        globals.LOG.debug(
+            localize(
+                "createTemplate.log.debug.noValidNameEntered",
+                "No valid template name entered. Operation cancelled"
+            )
+        );
+        vscode.window.showInformationMessage(localize("createTemplate.operationCancelled", "Operation cancelled."));
+        return;
+    }
+
+    // 2nd step: Select data set type or template
+    let type = await vscode.window.showQuickPick(stepTwoChoices, stepTwoOptions);
+    let selectedTemplate = null;
+    if (!type) {
+        globals.LOG.debug(
+            localize(
+                "createTemplate.log.debug.noValidTypeEntered",
+                "No valid template type selected. Operation cancelled"
+            )
+        );
+        vscode.window.showInformationMessage(localize("createTemplate.operationCancelled", "Operation cancelled."));
+        return;
+    } else if (type !== "- Blank Template") {
+        selectedTemplate = customTemplates.find((template) => template["template-name"] === type);
+        if ((selectedTemplate && selectedTemplate.type) || !selectedTemplate) {
+            // Add the default DS type attributes to the editable list
+            type = selectedTemplate ? selectedTemplate.type : type;
+            typeEnum = getDataSetTypeAndOptions(type).typeEnum;
+            const cliDefaultsKey = globals.CreateDataSetTypeWithKeysEnum[typeEnum].replace("DATA_SET_", "");
+            propertiesFromDsType = zowe.CreateDefaults.DATA_SET[cliDefaultsKey];
+            newDSProperties.forEach((defaultProperty) => {
+                Object.keys(propertiesFromDsType).forEach((typeProperty) => {
+                    if (typeProperty === defaultProperty.key) {
+                        defaultProperty.value = propertiesFromDsType[typeProperty].toString();
+                        defaultProperty.placeHolder = propertiesFromDsType[typeProperty];
+                    }
+                });
+            });
+        }
+
+        // Add the template attributes to the editable list
+        newDSProperties.forEach((defaultProperty) => {
+            if (selectedTemplate) {
+                if (defaultProperty.key === "dsName") {
+                    defaultProperty.value = selectedTemplate.label;
+                }
+                Object.keys(selectedTemplate.properties).forEach((templateProperty) => {
+                    if (templateProperty === defaultProperty.key) {
+                        defaultProperty.value = selectedTemplate.properties[templateProperty].toString();
+                        defaultProperty.placeHolder = selectedTemplate.properties[templateProperty];
+                    }
+                });
+            }
+        });
+    }
+
+    // 3rd step: Show data set attributes
+    const choice2 = await handleUserSelection(newDSProperties, true);
+    if (choice2 === null) {
+        vscode.window.showInformationMessage(localize("createTemplate.operationCancelled", "Operation cancelled."));
+        return;
+    } else if (choice2 === "> Save as Template") {
+        // Save the template
+        const dsPropsFormatted = formatDSProperties(newDSProperties, true);
+        datasetProvider.addTemplate(JSON.stringify(dsPropsFormatted));
+
+        vscode.window.showInformationMessage(localize("createTemplate.savedTemplate", "Template saved."));
+        return;
+    }
+}
+
 export async function manageTemplates(node: IZoweDatasetTreeNode, datasetProvider: IZoweTree<IZoweDatasetTreeNode>) {
     const stepOneOptions = {
         placeHolder: localize(

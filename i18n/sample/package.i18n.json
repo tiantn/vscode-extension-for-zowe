@@ -74,6 +74,7 @@
   "Zowe-Automatic-Validation": "Allow automatic validation of profiles.",
   "issueMvsCmd": "Zowe: Issue MVS Command...",
   "manageTemplates": "Manage Data Set Templates",
+  "createTemplate": "Create New Template",
   "deleteProfile": "Delete Profile",
   "cmd.deleteProfile": "Zowe: Delete a Profile Permanently...",
   "rename": "Rename",

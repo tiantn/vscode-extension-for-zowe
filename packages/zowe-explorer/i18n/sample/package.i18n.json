@@ -24,6 +24,7 @@
   "editMember": "Edit Member",
   "issueMvsCmd": "Issue MVS Command",
   "manageTemplates": "Manage Data Set Templates",
+  "createTemplate": "Create New Template",
   "uploadDialog": "Upload Member...",
   "pattern": "Search Data Sets",
   "refreshNode": "Pull from Mainframe",

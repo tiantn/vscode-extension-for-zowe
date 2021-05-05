@@ -2,7 +2,7 @@
   "name": "vscode-extension-for-zowe",
   "displayName": "%displayName%",
   "description": "%description%",
-  "version": "1.11.1",
+  "version": "1.14.0",
   "publisher": "Zowe",
   "author": "Zowe",
   "license": "EPL-2.0",
@@ -68,6 +68,11 @@
         "command": "zowe.searchInAllLoadedItems",
         "key": "ctrl+alt+p",
         "mac": "cmd+alt+p"
+      },
+      {
+        "command": "zowe.deleteJob",
+        "key": "delete",
+        "when": "listSupportsMultiselect"
       }
     ],
     "commands": [
@@ -481,11 +486,13 @@
       },
       {
         "command": "zowe.runModifyCommand",
-        "title": "%runModifyCommand%"
+        "title": "%runModifyCommand%",
+        "category": "Zowe"
       },
       {
         "command": "zowe.runStopCommand",
-        "title": "%runStopCommand%"
+        "title": "%runStopCommand%",
+        "category": "Zowe"
       },
       {
         "command": "zowe.setOwner",
@@ -553,11 +560,13 @@
       },
       {
         "command": "zowe.issueTsoCmd",
-        "title": "%issueTsoCmd%"
+        "title": "%issueTsoCmd%",
+        "category": "Zowe"
       },
       {
         "command": "zowe.issueMvsCmd",
-        "title": "%issueMvsCmd%"
+        "title": "%issueMvsCmd%",
+        "category": "Zowe"
       },
       {
         "command": "zowe.manageTemplates",
@@ -675,6 +684,11 @@
           "when": "view == zowe.uss.explorer && viewItem =~ /^(?!.*_fav.*)ussSession.*/",
           "command": "zowe.issueMvsCmd",
           "group": "1_create@6"
+        },
+        {
+          "when": "view == zowe.uss.explorer && viewItem =~ /^(?!.*_fav.*)ussSession.*/",
+          "command": "zowe.issueTsoCmd",
+          "group": "1_create@5"
         },
         {
           "when": "view == zowe.uss.explorer && viewItem =~ /^textFile.*/",
@@ -850,6 +864,11 @@
           "when": "view == zowe.explorer && viewItem =~ /^(?!.*_fav.*)session.*/",
           "command": "zowe.issueMvsCmd",
           "group": "1_create@10"
+        },
+        {
+          "when": "view == zowe.explorer && viewItem =~ /^(?!.*_fav.*)session.*/",
+          "command": "zowe.issueTsoCmd",
+          "group": "1_create@9"
         },
         {
           "when": "view == zowe.explorer && viewItem =~ /^(?!.*_fav.*)session.*/",
@@ -1029,6 +1048,11 @@
         {
           "when": "view == zowe.jobs && viewItem =~ /^(?!.*_fav.*)server.*/",
           "command": "zowe.issueMvsCmd",
+          "group": "1_systemSpecific@4"
+        },
+        {
+          "when": "view == zowe.jobs && viewItem =~ /^(?!.*_fav.*)server.*/",
+          "command": "zowe.issueTsoCmd",
           "group": "1_systemSpecific@4"
         },
         {
@@ -1285,10 +1309,6 @@
         {
           "command": "zowe.jobs.deleteProfile",
           "when": "never"
-        },
-        {
-          "command": "zowe.issueMvsCmd",
-          "when": "never"
         }
       ]
     },
@@ -1474,7 +1494,7 @@
     "@types/promise-queue": "^2.2.0",
     "@types/selenium-webdriver": "^3.0.4",
     "@types/yargs": "^11.0.0",
-    "eslint-plugin-zowe-explorer": "1.11.1",
+    "eslint-plugin-zowe-explorer": "1.14.0",
     "@typescript-eslint/eslint-plugin": "^2.31.0",
     "@typescript-eslint/parser": "^2.31.0",
     "eslint": "^6.8.0",
@@ -1514,7 +1534,7 @@
     "webpack-cli": "^3.3.11"
   },
   "dependencies": {
-    "@zowe/zowe-explorer-api": "1.11.1",
+    "@zowe/zowe-explorer-api": "1.14.0",
     "fs-extra": "8.0.1",
     "isbinaryfile": "4.0.4",
     "js-yaml": "3.13.1",

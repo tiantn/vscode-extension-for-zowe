@@ -190,8 +190,6 @@ async function createGlobalMocks() {
             "zowe.setJobSpool",
             "zowe.jobs.search",
             "zowe.jobs.editSession",
-            "zowe.issueTsoCmd",
-            "zowe.issueMvsCmd",
             "zowe.jobs.addFavorite",
             "zowe.jobs.removeFavorite",
             "zowe.jobs.saveSearch",
@@ -207,6 +205,8 @@ async function createGlobalMocks() {
             "zowe.cmd.deleteProfile",
             "zowe.uss.deleteProfile",
             "zowe.jobs.deleteProfile",
+            "zowe.issueTsoCmd",
+            "zowe.issueMvsCmd",
         ],
     };
 

@@ -85,33 +85,6 @@ export function labelRefresh(node: vscode.TreeItem): void {
     node.label = node.label.endsWith(" ") ? node.label.substring(0, node.label.length - 1) : node.label + " ";
 }
 
-/*************************************************************************************************************
- * Get updated profile and session information
- * @param {sessNode} IZoweTreeNode
- *************************************************************************************************************/
-// This function does not perform any UI refresh; it just gets updated profile information.
-export async function refreshTree(sessNode: IZoweTreeNode) {
-    const profileType = sessNode.getProfile().type;
-    const allProf = Profiles.getInstance().getProfiles(profileType);
-    const baseProf = await Profiles.getInstance().getBaseProfile();
-    for (const profNode of allProf) {
-        if (sessNode.getProfileName() === profNode.name) {
-            sessNode.getProfile().profile = profNode.profile;
-            const combinedSessionProfile = (await Profiles.getInstance().getCombinedProfile(profNode, baseProf))
-                .profile;
-            const sessionNode = sessNode.getSession();
-            for (const prop of Object.keys(combinedSessionProfile)) {
-                if (prop === "host") {
-                    sessionNode.ISession.hostname = combinedSessionProfile[prop];
-                } else {
-                    sessionNode.ISession[prop] = combinedSessionProfile[prop];
-                }
-            }
-        }
-    }
-    sessNode.collapsibleState = vscode.TreeItemCollapsibleState.Collapsed;
-}
-
 export function sortTreeItems(favorites: vscode.TreeItem[], specificContext) {
     favorites.sort((a, b) => {
         if (a.contextValue === specificContext) {
@@ -201,6 +174,11 @@ export function checkForAddedSuffix(filename: string): boolean {
         dotPos <= 4 && // if the last characters are 2 to 4 long and lower case it has been added
         filename.substring(filename.length - dotPos) === filename.substring(filename.length - dotPos).toLowerCase()
     );
+}
+
+export function checkIfChildPath(parentPath: string, childPath: string): boolean {
+    const relativePath = path.relative(parentPath, childPath);
+    return relativePath && !relativePath.startsWith("..") && !path.isAbsolute(relativePath);
 }
 
 /**

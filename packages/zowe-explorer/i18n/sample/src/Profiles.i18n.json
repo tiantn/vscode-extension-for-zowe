@@ -23,7 +23,6 @@
   "createNewConnection.undefined.port": "Invalid Port number provided or operation was cancelled",
   "createNewConnection.undefined.username": "Operation Cancelled",
   "createNewConnection.rejectUnauthorize": "Operation Cancelled",
-  "createNewConnection.number": "Operation Cancelled",
   "createNewConnection.booleanValue": "Operation Cancelled",
   "createNewConnection.default": "Operation Cancelled",
   "createNewConnection.duplicateProfileName": "Profile name already exists. Please create a profile using a different name",
@@ -62,5 +61,7 @@
   "createNewConnection.undefined.passWord": "Operation Cancelled",
   "createNewConnection.option.prompt.password.placeholder": "Password",
   "createNewConnection.option.prompt.password": "Enter the password for the connection. Leave blank to not store.",
+  "createNewConnection.ru.false": "False - Accept connections with self-signed certificates",
+  "createNewConnection.ru.true": "True - Reject connections with self-signed certificates",
   "createNewConnection.option.prompt.ru.placeholder": "Reject Unauthorized Connections"
 }

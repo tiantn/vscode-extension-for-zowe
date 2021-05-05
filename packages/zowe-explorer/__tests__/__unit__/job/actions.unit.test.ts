@@ -29,6 +29,7 @@ import * as dsActions from "../../../src/dataset/actions";
 import * as globals from "../../../src/globals";
 import { createDatasetSessionNode, createDatasetTree } from "../../../__mocks__/mockCreators/datasets";
 import { Profiles } from "../../../src/Profiles";
+import * as SpoolProvider from "../../../src/SpoolProvider";
 
 const activeTextEditorDocument = jest.fn();
 
@@ -57,6 +58,10 @@ function createGlobalMocks() {
     Object.defineProperty(Profiles, "getInstance", { value: jest.fn(), configurable: true });
     Object.defineProperty(vscode, "Uri", { value: jest.fn(), configurable: true });
     Object.defineProperty(vscode.Uri, "parse", { value: jest.fn(), configurable: true });
+    Object.defineProperty(vscode.Uri.parse, "with", { value: jest.fn(), configurable: true });
+    const executeCommand = jest.fn();
+    Object.defineProperty(vscode.commands, "executeCommand", { value: executeCommand, configurable: true });
+    Object.defineProperty(SpoolProvider, "encodeJobFile", { value: jest.fn(), configurable: true });
 }
 
 // Idea is borrowed from: https://github.com/kulshekhar/ts-jest/blob/master/src/util/testing.ts
@@ -658,6 +663,16 @@ describe("Jobs Actions Unit Tests - Function getSpoolContent", () => {
         const testJobTree = createJobsTree(session, iJob, imperativeProfile, treeView);
         const jesApi = createJesApi(imperativeProfile);
         const mockCheckCurrentProfile = jest.fn();
+        const mockUri: vscode.Uri = {
+            scheme: "testScheme",
+            authority: "testAuthority",
+            path: "testPath",
+            query: "testQuery",
+            fragment: "testFragment",
+            fsPath: "testFsPath",
+            with: jest.fn(),
+            toJSON: jest.fn(),
+        };
         bindJesApi(jesApi);
 
         return {
@@ -670,6 +685,7 @@ describe("Jobs Actions Unit Tests - Function getSpoolContent", () => {
             jesApi,
             testJobTree,
             mockCheckCurrentProfile,
+            mockUri,
         };
     }
 
@@ -677,11 +693,11 @@ describe("Jobs Actions Unit Tests - Function getSpoolContent", () => {
         createGlobalMocks();
         const blockMocks = createBlockMocks();
 
-        mocked(vscode.Uri.parse).mockReturnValueOnce("test" as any);
+        mocked(SpoolProvider.encodeJobFile).mockReturnValueOnce(blockMocks.mockUri);
         mocked(Profiles.getInstance).mockReturnValue(blockMocks.profileInstance);
         await jobActions.getSpoolContent(blockMocks.testJobTree, "sessionName", blockMocks.iJobFile);
 
-        expect(mocked(vscode.workspace.openTextDocument)).toBeCalledWith("test");
+        expect(mocked(vscode.workspace.openTextDocument)).toBeCalledWith(blockMocks.mockUri);
         expect(mocked(vscode.window.showTextDocument)).toBeCalled();
     });
     it("Checking opening of Spool Content with Unverified profile", async () => {
@@ -700,18 +716,18 @@ describe("Jobs Actions Unit Tests - Function getSpoolContent", () => {
             }),
         });
 
-        mocked(vscode.Uri.parse).mockReturnValueOnce("test" as any);
+        mocked(SpoolProvider.encodeJobFile).mockReturnValueOnce(blockMocks.mockUri);
         mocked(Profiles.getInstance).mockReturnValue(blockMocks.profileInstance);
         await jobActions.getSpoolContent(blockMocks.testJobTree, "sessionName", blockMocks.iJobFile);
 
-        expect(mocked(vscode.workspace.openTextDocument)).toBeCalledWith("test");
+        expect(mocked(vscode.workspace.openTextDocument)).toBeCalledWith(blockMocks.mockUri);
         expect(mocked(vscode.window.showTextDocument)).toBeCalled();
     });
     it("Checking failed attempt to open Spool Content", async () => {
         createGlobalMocks();
         const blockMocks = createBlockMocks();
 
-        mocked(vscode.Uri.parse).mockImplementationOnce(() => {
+        mocked(SpoolProvider.encodeJobFile).mockImplementationOnce(() => {
             throw new Error("Test");
         });
         mocked(Profiles.getInstance).mockReturnValue(blockMocks.profileInstance);
@@ -726,11 +742,11 @@ describe("Jobs Actions Unit Tests - Function getSpoolContent", () => {
         const blockMocks = createBlockMocks();
 
         blockMocks.profileInstance.promptCredentials.mockReturnValue(["fake", "fake", "fake"]);
-        mocked(vscode.Uri.parse).mockReturnValueOnce("test" as any);
+        mocked(SpoolProvider.encodeJobFile).mockReturnValueOnce(blockMocks.mockUri);
         mocked(Profiles.getInstance).mockReturnValue(blockMocks.profileInstance);
         await jobActions.getSpoolContent(blockMocks.testJobTree, "sessionName", blockMocks.iJobFile);
 
-        expect(mocked(vscode.workspace.openTextDocument)).toBeCalledWith("test");
+        expect(mocked(vscode.workspace.openTextDocument)).toBeCalledWith(blockMocks.mockUri);
         expect(mocked(vscode.window.showTextDocument)).toBeCalled();
     });
     it("Checking failed attempt to open Spool Content with credentials prompt", async () => {
@@ -738,7 +754,7 @@ describe("Jobs Actions Unit Tests - Function getSpoolContent", () => {
         const blockMocks = createBlockMocks();
 
         blockMocks.profileInstance.promptCredentials.mockReturnValue(["fake", "fake", "fake"]);
-        mocked(vscode.Uri.parse).mockImplementationOnce(() => {
+        mocked(SpoolProvider.encodeJobFile).mockImplementationOnce(() => {
             throw new Error("Test");
         });
         mocked(Profiles.getInstance).mockReturnValue(blockMocks.profileInstance);
@@ -900,5 +916,40 @@ describe("Jobs Actions Unit Tests - Function refreshJobsServer", () => {
 
         expect(blockMocks.testJobTree.checkCurrentProfile).toHaveBeenCalledWith(job);
         expect(blockMocks.testJobTree.refreshElement).toHaveBeenCalledWith(job);
+    });
+});
+
+describe("Jobs Actions Unit Tests - Function deleteCommand", () => {
+    function createBlockMocks() {
+        const session = createISession();
+        const treeView = createTreeView();
+        const iJob = createIJobObject();
+        const imperativeProfile = createIProfile();
+
+        return {
+            session,
+            treeView,
+            iJob,
+            imperativeProfile,
+            testJobsTree: createJobsTree(session, iJob, imperativeProfile, treeView),
+        };
+    }
+    it("Tests that delete informs the user that a job was deleted", async () => {
+        createGlobalMocks();
+        const blockMocks = createBlockMocks();
+        const node = new Job(
+            "jobtest",
+            vscode.TreeItemCollapsibleState.Expanded,
+            null,
+            blockMocks.session,
+            blockMocks.iJob,
+            blockMocks.imperativeProfile
+        );
+
+        await jobActions.deleteCommand(node, blockMocks.testJobsTree);
+        expect(mocked(vscode.window.showInformationMessage).mock.calls.length).toBe(1);
+        expect(mocked(vscode.window.showInformationMessage).mock.calls[0][0]).toEqual(
+            `Job ${node.job.jobname}(${node.job.jobid}) deleted`
+        );
     });
 });

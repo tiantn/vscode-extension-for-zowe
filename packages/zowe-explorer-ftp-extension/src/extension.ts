@@ -11,23 +11,28 @@
 
 import * as vscode from "vscode";
 import { ZoweExplorerApi } from "@zowe/zowe-explorer-api";
-import { FtpUssApi } from "./ZoweExplorerFtpApi";
+import { FtpUssApi } from "./ZoweExplorerFtpUssApi";
+import { FtpMvsApi } from "./ZoweExplorerFtpMvsApi";
+import { FtpJesApi } from "./ZoweExplorerFtpJesApi";
 
 // eslint-disable-next-line @typescript-eslint/no-unused-vars
 export function activate(context: vscode.ExtensionContext): void {
-    void registerFtpApi();
+    void registerFtpApis();
 }
 
 /**
  * Function that searches for the Zowe VS Code Extension and if found
  * registers the additional USS API implementation provided by this extension.
  */
-async function registerFtpApi(): Promise<boolean> {
+
+async function registerFtpApis(): Promise<boolean> {
     const zoweExplorerApi = vscode.extensions.getExtension("Zowe.vscode-extension-for-zowe");
 
     if (zoweExplorerApi && zoweExplorerApi.exports) {
         const importedApi = zoweExplorerApi.exports as ZoweExplorerApi.IApiRegisterClient;
         importedApi.registerUssApi(new FtpUssApi());
+        importedApi.registerMvsApi(new FtpMvsApi());
+        importedApi.registerJesApi(new FtpJesApi());
         // check as getExplorerExtenderApi().reloadProfiles() was add in Zowe Explorer 1.5 only
         if (importedApi.getExplorerExtenderApi && importedApi.getExplorerExtenderApi().reloadProfiles) {
             await importedApi.getExplorerExtenderApi().reloadProfiles();

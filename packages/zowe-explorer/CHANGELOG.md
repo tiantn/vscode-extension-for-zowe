@@ -2,6 +2,38 @@
 
 All notable changes to the "vscode-extension-for-zowe" extension will be documented in this file.
 
+## `1.14.0`
+
+- Added the Issue TSO Commands feature [#1245](https://github.com/zowe/vscode-extension-for-zowe/pull/1245). Thanks @JillieBeanSim
+- Fixed the issue that caused the USS tree to collapse after renaming a folder [#1259](https://github.com/zowe/vscode-extension-for-zowe/pull/1259). Thanks @lauren-li
+- Fixed the issue that prevented jobs with an octothorpe (#) in the name from opening [#1253](https://github.com/zowe/vscode-extension-for-zowe/issues/1253). Thanks @katelynienaber
+
+## `1.13.1`
+
+- Updated the dialog text for issuing MVS commands. Now the text of the function is `Zowe: Issue MVS Command` [#1230](https://github.com/zowe/vscode-extension-for-zowe/pull/1230). Thanks @JillieBeanSim
+- Added the prompt for credentials when issuing MVS commands, using the right click action, against profiles with missing credentials [#1231](https://github.com/zowe/vscode-extension-for-zowe/pull/1231). Thanks @JillieBeanSim
+- Added the Prerequisites section to the Zowe Explorer Extension for FTP ReadMe [#1246](https://github.com/zowe/vscode-extension-for-zowe/pull/1246). Thanks @lauren-li
+- Added Open VSX to the deployment pipeline [#1240](https://github.com/zowe/vscode-extension-for-zowe/pull/1240). Thanks @zFernand0
+
+## `1.13.0`
+
+- Added the monorepo landing Readme that contains the high-level overview of the repository folders such as `packages` folder, instructions on how to contribute to the project and links to Medium articles providing additional useful information about Zowe Explorer and Zowe [#1199](https://github.com/zowe/vscode-extension-for-zowe/pull/1199). Thanks @IgorCATech
+- Fixed the issue that prevented the list of recently opened files from being displayed upon request. You can access a list of recently opened files by pressing the Ctrl+Alt+R (Windows) or Command+Option+R (Mac) key combination [#1208](https://github.com/zowe/vscode-extension-for-zowe/pull/#1208). Thanks @jellypuno
+- Fixed the issue that prevented file picker from functioning. The file picker feature lets you filter your datasets in the tree by pressing the Ctrl+Alt+P (Windows) or Command+Option+P (Mac) key combination [#992](https://github.com/zowe/vscode-extension-for-zowe/issues/992). Thanks @katelynienaber
+- Fixed the issue that caused the content from a previously filtered USS directory instead of the currently filtered USS directory to be served [#1134](https://github.com/zowe/vscode-extension-for-zowe/issues/1134). Thanks @lauren-li
+- Added the previously selected `RejectUnauthorized` value to the placeholder text of the entry field while updating an existing profile. In addition, the value is highlighted and shown at the top of the selection list [#1218](https://github.com/zowe/vscode-extension-for-zowe/pull/1218). Thanks @JillieBeanSim
+- Added the pre-filled and pre-selected filename of the copied member to the entry field while performing the paste member action [#1183](https://github.com/zowe/vscode-extension-for-zowe/pull/1183). Thanks @JillieBeanSim
+- Added the multiple deletion of jobs feature [#1128](https://github.com/zowe/vscode-extension-for-zowe/pull/1128). Thanks @crawr
+- Improved error handling for the data set copy/paste member, migrate, and recall functions [#1219](https://github.com/zowe/vscode-extension-for-zowe/pull/1219). Thanks @tiantn
+
+## `1.12.1`
+
+- Fixed the issue that prevented edited profile base paths from being saved [#989](https://github.com/zowe/vscode-extension-for-zowe/issues/989). Thanks @katelynienaber
+- Fixed the issue that prevented Zowe Explorer from storing empty values for optional profile fields, such as `user`, `password`, `timeout`, and `encoding`. This is done to be consistent with the way Zowe CLI stores profile information when creating and editing profiles [#1016](https://github.com/zowe/vscode-extension-for-zowe/issues/1016). Thanks @katelynienaber
+- Fixed the issue that caused repeated credential prompting if a user refused to authenticate [#1147](https://github.com/zowe/vscode-extension-for-zowe/issues/1147). Thanks @katelynienaber
+- Fixed the issue that caused removed favorite profiles to be favorited again in subsequent IDE sessions [#1144](https://github.com/zowe/vscode-extension-for-zowe/issues/1144). Thanks @lauren-li
+- Fixed the issue that prevented updated credential prompting from occurring when a profile was marked “invalid” [#1095](https://github.com/zowe/vscode-extension-for-zowe/issues/1095). Thanks @katelynienaber
+
 ## `1.12.0`
 
 - Added the ability to edit data set attributes before allocation [#1031](https://github.com/zowe/vscode-extension-for-zowe/issues/1031). Thanks @katelynienaber

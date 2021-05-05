@@ -80,7 +80,7 @@ export class ZosJobsProvider extends ZoweTreeProvider implements IZoweTree<IZowe
             this.mFavoriteSession.iconPath = icon.path;
         }
         this.mSessionNodes = [this.mFavoriteSession];
-        this.treeView = vscode.window.createTreeView("zowe.jobs", { treeDataProvider: this });
+        this.treeView = vscode.window.createTreeView("zowe.jobs", { treeDataProvider: this, canSelectMany: true });
     }
 
     public rename(node: IZoweJobTreeNode) {
@@ -140,7 +140,7 @@ export class ZosJobsProvider extends ZoweTreeProvider implements IZoweTree<IZowe
                 const favsForProfile = this.loadProfilesForFavorites(this.log, element);
                 return favsForProfile;
             }
-            await Profiles.getInstance().checkCurrentProfile(element.getProfile());
+            // await Profiles.getInstance().checkCurrentProfile(element.getProfile());
             return element.getChildren();
         }
         return this.mSessionNodes;
@@ -203,15 +203,7 @@ export class ZosJobsProvider extends ZoweTreeProvider implements IZoweTree<IZowe
     public async delete(node: IZoweJobTreeNode) {
         try {
             await ZoweExplorerApiRegister.getJesApi(node.getProfile()).deleteJob(node.job.jobname, node.job.jobid);
-            vscode.window.showInformationMessage(
-                localize("deleteJob.job", "Job ") +
-                    node.job.jobname +
-                    "(" +
-                    node.job.jobid +
-                    ")" +
-                    localize("deleteJob.delete", " deleted")
-            );
-            this.removeFavorite(this.createJobsFavorite(node));
+            await this.removeFavorite(this.createJobsFavorite(node));
         } catch (error) {
             await errorHandling(error, node.getProfileName(), error.message);
         }
@@ -338,10 +330,27 @@ export class ZosJobsProvider extends ZoweTreeProvider implements IZoweTree<IZowe
         if (!parentNode.getProfile() || !parentNode.getSession()) {
             try {
                 profile = Profiles.getInstance().loadNamedProfile(profileName);
-                session = ZoweExplorerApiRegister.getJesApi(profile).getSession();
-                parentNode.setProfileToChoice(profile);
-                parentNode.setSessionToChoice(session);
-                parentNode.owner = session.ISession.user;
+                await Profiles.getInstance().checkCurrentProfile(profile);
+                if (
+                    Profiles.getInstance().validProfile === ValidProfileEnum.VALID ||
+                    Profiles.getInstance().validProfile === ValidProfileEnum.UNVERIFIED
+                ) {
+                    session = ZoweExplorerApiRegister.getJesApi(profile).getSession();
+                    parentNode.setProfileToChoice(profile);
+                    parentNode.setSessionToChoice(session);
+                    parentNode.owner = session.ISession.user;
+                } else {
+                    return [
+                        new Job(
+                            localize("loadProfilesForFavorites.authFailed", "You must authenticate to view favorites."),
+                            vscode.TreeItemCollapsibleState.None,
+                            parentNode,
+                            null,
+                            null,
+                            null
+                        ),
+                    ];
+                }
             } catch (error) {
                 const errMessage: string =
                     localize(
@@ -449,18 +458,21 @@ export class ZosJobsProvider extends ZoweTreeProvider implements IZoweTree<IZowe
         // Get node's profile node in favorites
         const profileName = node.getProfileName();
         const profileNodeInFavorites = this.findMatchingProfileInArray(this.mFavorites, profileName);
-        const startLength = profileNodeInFavorites.children.length;
-        profileNodeInFavorites.children = profileNodeInFavorites.children.filter(
-            (temp) => !(temp.label === node.label && temp.contextValue.startsWith(node.contextValue))
-        );
-        // Remove profile node from Favorites if it contains no more favorites.
-        if (profileNodeInFavorites.children.length < 1) {
-            this.removeFavProfile(profileName, false);
+        if (profileNodeInFavorites) {
+            const startLength = profileNodeInFavorites.children.length;
+            profileNodeInFavorites.children = profileNodeInFavorites.children.filter(
+                (temp) => !(temp.label === node.label && temp.contextValue.startsWith(node.contextValue))
+            );
+            // Remove profile node from Favorites if it contains no more favorites.
+            if (profileNodeInFavorites.children.length < 1) {
+                return this.removeFavProfile(profileName, false);
+            }
+            if (startLength !== profileNodeInFavorites.children.length) {
+                await this.updateFavorites();
+                this.refreshElement(this.mFavoriteSession);
+            }
         }
-        if (startLength !== profileNodeInFavorites.children.length) {
-            await this.updateFavorites();
-            this.refreshElement(this.mFavoriteSession);
-        }
+        return;
     }
 
     public async updateFavorites() {
@@ -501,6 +513,7 @@ export class ZosJobsProvider extends ZoweTreeProvider implements IZoweTree<IZowe
                 ignoreFocusOut: true,
                 canPickMany: false,
             };
+            // If user did not select "Continue", do nothing.
             if (
                 (await vscode.window.showQuickPick([continueRemove, cancelRemove], quickPickOptions)) !== continueRemove
             ) {
@@ -508,6 +521,7 @@ export class ZosJobsProvider extends ZoweTreeProvider implements IZoweTree<IZowe
             }
         }
 
+        // Remove favorited profile from UI
         this.mFavorites.forEach((favProfileNode) => {
             const favProfileLabel = favProfileNode.label.trim();
             if (favProfileLabel === profileName) {
@@ -516,6 +530,10 @@ export class ZosJobsProvider extends ZoweTreeProvider implements IZoweTree<IZowe
                 this.refresh();
             }
         });
+
+        // Update the favorites in settings file
+        await this.updateFavorites();
+        return;
     }
 
     /**

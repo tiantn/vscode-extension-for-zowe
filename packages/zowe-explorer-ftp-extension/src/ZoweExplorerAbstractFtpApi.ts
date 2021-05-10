@@ -10,6 +10,8 @@
  */
 
 /* eslint-disable @typescript-eslint/no-unsafe-assignment */
+/* eslint-disable @typescript-eslint/no-unsafe-return */
+/* eslint-disable @typescript-eslint/no-unsafe-member-access */
 import * as imperative from "@zowe/imperative";
 import { FTPConfig, IZosFTPProfile } from "@zowe/zos-ftp-for-zowe-cli";
 import { ZoweExplorerApi } from "@zowe/zowe-explorer-api";
@@ -57,13 +59,18 @@ export abstract class AbstractFtpApi implements ZoweExplorerApi.ICommon {
 
     public async ftpClient(profile: imperative.IProfileLoaded): Promise<any> {
         const ftpProfile = profile.profile as IZosFTPProfile;
-        // eslint-disable-next-line @typescript-eslint/no-unsafe-return
-        return await FTPConfig.connectFromArguments({
+        if (ftpProfile.connection !== undefined) {
+            if (ftpProfile.connection.connected) {
+                return ftpProfile.connection;
+            }
+        }
+        ftpProfile.connection = await FTPConfig.connectFromArguments({
             host: ftpProfile.host,
             user: ftpProfile.user,
             password: ftpProfile.password,
             port: ftpProfile.port,
             secureFtp: ftpProfile.secureFtp,
         });
+        return ftpProfile.connection;
     }
 }
